@@ -26,8 +26,8 @@ This version is superior to the original in the following ways:
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/Siroopfles/context-portal-v2.git
-    cd context-portal-v2
+    git clone https://github.com/Siroopfles/novaport-mcp.git
+    cd novaport-mcp
     ```
 
 2.  **Install dependencies:**
@@ -78,7 +78,7 @@ To use this server in VS Code as the backend for NovaPort, configure your worksp
       ],
       // CRITICAL: This tells VS Code to run the command from the correct directory.
       // Adjust this path to the location of your conport-v2 server on your machine.
-      "cwd": "D:\\Desktop\\Projecten\\Novaport-mcp\\context-portal-v2", 
+      "cwd": "D:\\Desktop\\Projecten\\Novaport-mcp\\novaport-mcp", 
       
       "disabled": false,
       "description": "The new, robust ConPort v2 server for NovaPort."
@@ -104,81 +104,3 @@ To use this server in VS Code as the backend for NovaPort, configure your worksp
 
 This project is licensed under the Apache 2.0 License. See the `LICENSE` file for details.
 
-
----
-
-### **2. Instructions: Linking Your Local Directory to Your GitHub Fork**
-
-This is the step-by-step guide to connect your local project at `D:\Desktop\Projecten\Novaport-mcp\context-portal-v2` to the GitHub fork you created under your `Siroopfles` account.
-
-#### **Step 0: Ensure Your Fork Exists on GitHub**
-
-If you haven't already:
-1.  Navigate to the original repository: [https://github.com/GreatScottyMac/context-portal](https://github.com/GreatScottyMac/context-portal)
-2.  Click the **"Fork"** button in the top-right corner.
-3.  Choose your `Siroopfles` account as the destination. You now have a copy at `https://github.com/Siroopfles/context-portal`. I recommend renaming this repository to `context-portal-v2` via its settings page for clarity.
-
-#### **Step 1: Navigate to Your Local Project Directory**
-
-Open a terminal (like Git Bash, PowerShell, or Command Prompt) and go to your project directory:
-
-```bash
-cd D:\Desktop\Projecten\Novaport-mcp\context-portal-v2
-```
-
-#### **Step 2: Initialize Git (if not already done)**
-
-Check if a `.git` folder already exists. If not, initialize a new Git repository:
-```bash
-git init
-```
-
-#### **Step 3: Connect Your Local Repo to the Remote Fork**
-
-This step tells your local Git repository where its "origin" on the internet is.
-
-1.  Go to the page for **your fork** on GitHub (e.g., `https://github.com/Siroopfles/context-portal-v2`).
-2.  Click the green **"< > Code"** button.
-3.  Copy the **HTTPS** or **SSH** URL. It will look like this:
-    -   HTTPS: `https://github.com/Siroopfles/context-portal-v2.git`
-    -   SSH: `git@github.com:Siroopfles/context-portal-v2.git`
-
-4.  Execute the following command in your terminal, pasting the URL you copied:
-    ```bash
-    git remote add origin https://github.com/Siroopfles/context-portal-v2.git
-    ```
-
-#### **Step 4: Verify the Connection**
-
-Check that the remote was added successfully:
-```bash
-git remote -v
-```
-You should see output similar to this:
-```
-origin  https://github.com/Siroopfles/context-portal-v2.git (fetch)
-origin  https://github.com/Siroopfles/context-portal-v2.git (push)
-```
-
-#### **Step 5: Make Your First Push to GitHub**
-
-Now you will send all your local code to your GitHub fork for the first time.
-
-1.  **Add all files** to the staging area:
-    ```bash
-    git add .
-    ```
-
-2.  **Create your first commit:**
-    ```bash
-    git commit -m "Initial commit of complete ConPort v2 refactor"
-    ```
-
-3.  **Push the code to your `main` branch on GitHub:**
-    The `-u` flag sets the remote `origin/main` as the default upstream branch for your local `main` branch.
-    ```bash
-    git push -u origin main
-    ```
-    *(If your default branch is named `master`, use `git push -u origin master` instead)*.
-
-**You're done!** If you refresh your GitHub fork's page, you will now see all your project files. Your local directory is successfully linked and synchronized with your GitHub repository.
