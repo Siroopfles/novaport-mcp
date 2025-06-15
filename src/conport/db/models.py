@@ -1,7 +1,9 @@
 import datetime
 from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import relationship
-from .database import Base
+from sqlalchemy.orm import relationship, declarative_base
+
+# Definieer de Base HIER, binnen de models.py file.
+Base = declarative_base()
 
 # Core Data Models
 class ProductContext(Base):

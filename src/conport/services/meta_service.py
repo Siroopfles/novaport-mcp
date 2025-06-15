@@ -31,15 +31,16 @@ def batch_log_items(db: Session, workspace_id: str, item_type: str, items: List[
     for item_data in items:
         try:
             validated_item = schema(**item_data)
-            # Pas de service call aan om workspace_id mee te geven
+            
+            # Een meer generieke manier om de service aan te roepen
             if item_type == "progress":
-                 # Progress heeft een speciale signatuur
                  service_func(db, workspace_id, validated_item, None, None, "relates_to_progress")
-            else:
-                 # De andere create/upsert functies hebben een vergelijkbare signatuur
-                 # We moeten de parameter naam correct doorgeven
-                 param_name = "decision" if item_type == "decision" else "pattern" if item_type == "system_pattern" else "data"
-                 service_func(db=db, workspace_id=workspace_id, **{param_name: validated_item})
+            elif item_type == "custom_data":
+                 service_func(db=db, workspace_id=workspace_id, data=validated_item)
+            elif item_type == "decision":
+                 service_func(db=db, workspace_id=workspace_id, decision=validated_item)
+            elif item_type == "system_pattern":
+                 service_func(db=db, workspace_id=workspace_id, pattern=validated_item)
 
             success_count += 1
         except (ValidationError, TypeError) as e:

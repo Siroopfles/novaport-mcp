@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, pool
-from sqlalchemy.orm import sessionmaker, declarative_base, Session
+from sqlalchemy.orm import sessionmaker, Session
 from contextlib import contextmanager
 from pathlib import Path
 import logging
@@ -9,34 +9,34 @@ import importlib.resources
 
 from alembic.config import Config
 from alembic import command
-from alembic.runtime.environment import EnvironmentContext
-from alembic.script import ScriptDirectory
 
 from ..core import config as core_config
+from .models import Base  # Importeer Base van de nieuwe locatie
 
 log = logging.getLogger(__name__)
 
-# Base voor SQLAlchemy modellen, dit moet geimporteerd worden door models.py
-# Dus we importeren models NA de definitie van Base.
-Base = declarative_base()
-from ..db import models
+_engines = {}
+_session_locals = {}
+
+def get_alembic_config(db_path: Path) -> Config:
+    """Maakt een Alembic configuratie object in-memory."""
+    # Gebruik importlib.resources.files om een Traversable object te krijgen
+    package_root = importlib.resources.files('conport')
+    script_location = str(package_root / 'db' / 'alembic')
+    
+    config = Config()
+    config.set_main_option("script_location", script_location)
+    config.set_main_option("sqlalchemy.url", f"sqlite:///{db_path.resolve()}")
+    return config
 
 def run_migrations_for_workspace(engine, db_path: Path):
     """Voert Alembic migraties programmatisch uit voor een specifieke database."""
     log.info(f"Alembic migraties uitvoeren voor database: {db_path}...")
-    
-    # Bepaal het pad naar de alembic script directory
-    package_root = Path(importlib.resources.files('conport'))
-    script_location = str(package_root / 'db' / 'alembic')
-    
-    # Maak een Alembic configuratie object in-memory
-    alembic_cfg = Config()
-    alembic_cfg.set_main_option("script_location", script_location)
-    
-    # Draai de migraties in de context van de engine van de workspace
+    alembic_cfg = get_alembic_config(db_path)
     with engine.connect() as connection:
         alembic_cfg.attributes['connection'] = connection
         command.upgrade(alembic_cfg, "head")
+        log.info("Alembic migraties succesvol.")
 
 def get_session_local(workspace_id: str) -> sessionmaker:
     """Haalt of creëert een SessionLocal voor een specifieke workspace."""
@@ -45,24 +45,18 @@ def get_session_local(workspace_id: str) -> sessionmaker:
             db_url = core_config.get_database_url_for_workspace(workspace_id)
             db_path = Path(db_url.replace("sqlite:///", ""))
 
-            # Maak een nieuwe engine aan voor deze workspace
-            engine = create_engine(
-                db_url,
-                connect_args={"check_same_thread": False},
-                poolclass=pool.StaticPool # Geschikt voor SQLite per-thread
-            )
+            engine = create_engine(db_url, connect_args={"check_same_thread": False})
 
-            # Voer migraties uit als de database nog niet bestaat.
+            # Als de database niet bestaat, maak de tabellen en stempel met Alembic
             if not db_path.exists() or db_path.stat().st_size == 0:
-                log.info(f"Database voor workspace '{workspace_id}' niet gevonden of leeg. Aanmaken en migreren...")
-                # We moeten de tabellen van de Base eerst aanmaken
+                log.info(f"Database voor workspace '{workspace_id}' niet gevonden of leeg. Aanmaken en stempelen...")
                 Base.metadata.create_all(engine)
-                # Daarna stempelen we de DB met de laatste Alembic revisie
-                alembic_cfg = Config()
-                alembic_cfg.set_main_option("script_location", str(Path(importlib.resources.files('conport')) / 'db' / 'alembic'))
-                command.stamp(alembic_cfg, "head")
+                command.stamp(get_alembic_config(db_path), "head")
                 log.info(f"Nieuwe database gestempeld met Alembic head.")
-            
+            else:
+                log.info(f"Bestaande database gevonden voor '{workspace_id}'. Controleren op migraties...")
+                # run_migrations_for_workspace(engine, db_path) # Optioneel: draai migraties bij elke start
+
             _engines[workspace_id] = engine
             _session_locals[workspace_id] = sessionmaker(autocommit=False, autoflush=False, bind=engine)
         except Exception as e:
