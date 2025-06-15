@@ -1,0 +1,10 @@
+import datetime
+from typing import Dict, Any, Optional
+from pydantic import BaseModel, ConfigDict
+class HistoryRead(BaseModel):
+    id: int
+    timestamp: datetime.datetime
+    version: int
+    content: Dict[str, Any]
+    change_source: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
