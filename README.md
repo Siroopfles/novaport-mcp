@@ -58,7 +58,7 @@ To start the server for use with an MCP client like Roo Code, run the following 
 poetry run conport
 ```
 
-The server will start and wait for `stdio` input. You **do not** need to run this command manually; the client extension (Roo Code) will do this for you based on the configuration below.
+The server will start and wait for `stdio` input. The server is multi-project aware; it does not depend on the directory you run it from. The specific project context is determined by the `workspace_id` parameter sent with each tool call.
 
 ## Integration with Roo Code (for NovaPort)
 
@@ -70,23 +70,24 @@ To use this server in VS Code as the backend for NovaPort, configure your worksp
 ```json
 {
   "mcpServers": {
-    "conport-v2": {
+    "novaport-mcp": {
       "command": "poetry",
       "args": [
         "run",
         "conport"
       ],
-      // CRITICAL: This tells VS Code to run the command from the correct directory.
-      // Adjust this path to the location of your conport-v2 server on your machine.
-      "cwd": "D:\\Desktop\\Projecten\\Novaport-mcp\\novaport-mcp", 
+      // This path MUST point to the directory where you cloned the novaport-mcp repository.
+      "cwd": "D:\\path\\to\\your\\cloned\\novaport-mcp", 
       
       "disabled": false,
-      "description": "The new, robust ConPort v2 server for NovaPort."
+      "description": "The robust, multi-project MCP server for NovaPort."
     }
   }
 }
 ```
-**Important:** Ensure the `cwd` path is correct and points to the directory where you cloned `conport-v2`.
+**Important:**
+1.  Ensure the `cwd` path is correct and points to the directory where you cloned `novaport-mcp`.
+2.  Your NovaPort system prompts must be updated to include `"workspace_id": "${workspaceFolder}"` in the `arguments` of every `use_mcp_tool` call. Without this, the server will not know which project's database to use.
 
 ## Development
 
@@ -96,11 +97,8 @@ To use this server in VS Code as the backend for NovaPort, configure your worksp
     ```
 -   **Creating a New Database Migration:** After modifying the models in `src/conport/db/models.py`:
     ```bash
+    # Let op: De database wordt nu per workspace beheerd.
+    # Deze commando's zijn voor het genereren van het migratiescript.
+    # De migratie zelf wordt automatisch toegepast op een nieuwe workspace-database.
     poetry run alembic revision --autogenerate -m "A description of your change"
-    poetry run alembic upgrade head
     ```
-
-## License
-
-This project is licensed under the Apache 2.0 License. See the `LICENSE` file for details.
-

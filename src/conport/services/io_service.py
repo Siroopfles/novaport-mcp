@@ -2,9 +2,11 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 from . import decision_service
 from ..schemas import decision as decision_schema
+
 def export_to_markdown(db: Session, export_path: Path):
     export_path.mkdir(parents=True, exist_ok=True)
     files_created = []
+    # Decisions
     decisions = decision_service.get_multi(db, limit=1000)
     if decisions:
         with open(export_path / "decisions.md", "w", encoding="utf-8") as f:
@@ -16,11 +18,14 @@ def export_to_markdown(db: Session, export_path: Path):
                 if isinstance(d.tags, list) and len(d.tags) > 0: f.write(f"**Tags:** {', '.join(d.tags)}\n\n")
                 f.write("---\n")
         files_created.append("decisions.md")
+    # Voeg hier logica toe voor het exporteren van andere entiteiten
     return {"status": "success", "path": str(export_path), "files_created": files_created}
-def import_from_markdown(db: Session, import_path: Path):
+
+def import_from_markdown(db: Session, workspace_id: str, import_path: Path):
     if not (import_path / "decisions.md").exists():
         return {"status": "failed", "error": "decisions.md not found"}
-    with open(import_path / "decisions.md", "r", encoding="utf-8") as f: content = f.read()
+    with open(import_path / "decisions.md", "r", encoding="utf-8") as f:
+        content = f.read()
     decision_blocks = content.split('---')
     count = 0
     for block in decision_blocks:
@@ -29,7 +34,8 @@ def import_from_markdown(db: Session, import_path: Path):
             summary = block.split('\n')[0].replace("##", "").strip()
             rationale = block.split("**Rationale:**")[1].split("**")[0].strip() if "**Rationale:**" in block else None
             decision_data = decision_schema.DecisionCreate(summary=summary, rationale=rationale)
-            decision_service.create(db, decision_data)
+            decision_service.create(db, workspace_id, decision_data) # Geef workspace_id door
             count += 1
-        except Exception: continue
+        except Exception:
+            continue
     return {"status": "success", "decisions_imported": count}

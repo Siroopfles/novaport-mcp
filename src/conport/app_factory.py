@@ -5,19 +5,26 @@ from .api import (
     decisions, context, progress, system_patterns, 
     custom_data, search, links, batch, meta, io, history
 )
+import base64
 
 def create_app() -> FastAPI:
     """Factory to create the FastAPI application instance."""
-    # This line ensures the event listeners in history_service are registered
     _ = history_service
 
     app = FastAPI(
         title=settings.PROJECT_NAME,
-        description="Context Portal v2: A robust, database-backed server.",
-        version="2.0.0"
+        description="A robust, multi-workspace MCP server for NovaPort.",
+        version="2.1.0"
     )
 
-    # Include all the API routers
+    # Health check at root
+    @app.get("/", tags=["Root"])
+    def read_root():
+        """Provides a simple health check response."""
+        return {"status": "ok", "project_name": settings.PROJECT_NAME}
+
+    # Include all API routers
+    # Deze routers verwachten nu een workspace_id in hun pad
     app.include_router(context.router)
     app.include_router(decisions.router)
     app.include_router(progress.router)
@@ -29,10 +36,5 @@ def create_app() -> FastAPI:
     app.include_router(meta.router)
     app.include_router(io.router)
     app.include_router(history.router)
-
-    @app.get("/", tags=["Root"])
-    def read_root():
-        """Provides a simple health check response."""
-        return {"status": "ok", "project_name": settings.PROJECT_NAME}
         
     return app

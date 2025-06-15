@@ -5,19 +5,19 @@ from alembic import context
 
 # Importeer de Base en de settings uit onze applicatie
 from conport.db.database import Base
-from conport.core.config import settings
+from conport.core.config import settings # <-- Belangrijk
 
 # Dit is het Alembic Config object, wat toegang geeft tot de
 # waarden in het .ini bestand.
 config = context.config
 
 # Interpreteer het config bestand voor Python logging.
-# Deze lijn is alleen nodig als je "fileConfig" wilt gebruiken in je .ini file.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # BELANGRIJK: Hier stellen we de `sqlalchemy.url` programmatisch in
-# op basis van onze Pydantic settings.
+# op basis van onze Pydantic settings. Dit is voor de CLI.
+# De draaiende app stelt dit per workspace in.
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # Voeg je model's MetaData object hier toe

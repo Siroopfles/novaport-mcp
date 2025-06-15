@@ -5,7 +5,7 @@ from . import vector_service
 from ..db import models
 from ..schemas import system_pattern as sp_schema
 
-def create(db: Session, pattern: sp_schema.SystemPatternCreate) -> models.SystemPattern:
+def create(db: Session, workspace_id: str, pattern: sp_schema.SystemPatternCreate) -> models.SystemPattern:
     """Creates a new system pattern and its vector embedding."""
     db_pattern = models.SystemPattern(**pattern.model_dump())
     db.add(db_pattern)
@@ -16,7 +16,7 @@ def create(db: Session, pattern: sp_schema.SystemPatternCreate) -> models.System
     tags_list = db_pattern.tags
     tags_str = ", ".join(tags_list) if isinstance(tags_list, list) else ""
     metadata = {"item_type": "system_pattern", "name": db_pattern.name, "tags": tags_str}
-    vector_service.upsert_embedding(f"system_pattern_{db_pattern.id}", text_to_embed, metadata)
+    vector_service.upsert_embedding(workspace_id, f"system_pattern_{db_pattern.id}", text_to_embed, metadata)
     
     return db_pattern
 
@@ -39,11 +39,11 @@ def get_multi(db: Session, skip: int = 0, limit: int = 100,
         
     return query.order_by(models.SystemPattern.name).offset(skip).limit(limit).all()
 
-def delete(db: Session, pattern_id: int) -> models.SystemPattern | None:
+def delete(db: Session, workspace_id: str, pattern_id: int) -> models.SystemPattern | None:
     """Deletes a system pattern and its vector embedding by its ID."""
     db_pattern = get(db, pattern_id)
     if db_pattern:
-        vector_service.delete_embedding(f"system_pattern_{pattern_id}")
+        vector_service.delete_embedding(workspace_id, f"system_pattern_{pattern_id}")
         db.delete(db_pattern)
         db.commit()
     return db_pattern

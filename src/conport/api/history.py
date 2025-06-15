@@ -4,17 +4,16 @@ from sqlalchemy.orm import Session
 from ..schemas import history as history_schema
 from ..db import models, database
 
-router = APIRouter(prefix="/history", tags=["History"])
+router = APIRouter(prefix="/workspaces/{workspace_id_b64}/history", tags=["History"])
 
 @router.get("/{item_type}", response_model=List[history_schema.HistoryRead])
 def get_item_history(
+    workspace_id_b64: str,
     item_type: str,
     db: Session = Depends(database.get_db),
     limit: int = Query(10, ge=1, le=100)
 ):
-    """
-    Retrieve the version history for 'product_context' or 'active_context'.
-    """
+    """Retrieve the version history for 'product_context' or 'active_context'."""
     history_model = None
     if item_type == "product_context":
         history_model = models.ProductContextHistory
