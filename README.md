@@ -1,10 +1,10 @@
-# ConPort v2 - The Backend for NovaPort
+# Novaport-MCP The Backend for NovaPort
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 This is a **complete, from-the-ground-up rewrite** of the original [greatscottymac/context-portal](https://github.com/GreatScottyMac/context-portal). The purpose of this fork is to provide a robust, maintainable, and type-safe Model Context Protocol (MCP) server, specifically developed as the backend for the [NovaPort Project](https://github.com/Siroopfles/NovaPort).
 
-All original features of ConPort v1 have been preserved, but the underlying architecture has been rebuilt using modern tooling and best practices to ensure stability and scalability.
+All original features of ConPort have been preserved, but the underlying architecture has been rebuilt using modern tooling and best practices to ensure stability and scalability.
 
 ## Key Architectural Improvements
 
@@ -103,7 +103,7 @@ To use this server in VS Code as the backend for NovaPort, configure your worksp
 ## License
 
 This project is licensed under the Apache 2.0 License. See the `LICENSE` file for details.
-```
+
 
 ---
 

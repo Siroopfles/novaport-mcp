@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Data directories
+conport_data/
+
+# Environment variables
+.env
+
+# Poetry
+.poetry/
+poetry.lockb
+
+# OS generated files
+.DS_Store
+Thumbs.db
