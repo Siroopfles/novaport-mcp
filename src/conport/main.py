@@ -326,7 +326,7 @@ def search_project_glossary_fts(
     with get_db_session_for_workspace(workspace_id) as db:
         items = custom_data_service.search_fts(db, query=query_term, category="ProjectGlossary", limit=limit or 10)
         return [cd_schema.CustomDataRead.model_validate(i).model_dump(mode='json') for i in items]
-    
+
 @mcp_server.tool()
 def batch_log_items(
     workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
@@ -419,6 +419,8 @@ def semantic_search_conport(
     return vector_service.search(workspace_id=workspace_id, query_text=query_text, top_k=top_k, filters=filters or None)
 
 @mcp_server.tool()
-def get_conport_schema(workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")]) -> Dict[str, Any]:
+def get_conport_schema(
+    workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")]
+) -> Dict[str, Any]:
     """Retrieves the schema of available ConPort tools and their arguments."""
     return mcp_server.schema()
