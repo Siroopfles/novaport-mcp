@@ -1,9 +1,10 @@
 import logging
-from typing import Any, Dict, List, Annotated, Optional
-from pydantic import Field, ValidationError
+from typing import Any, Dict, List, Annotated, Optional, Callable
+from pydantic import Field, ValidationError, TypeAdapter
 from fastmcp import FastMCP
 from pathlib import Path
 import datetime
+import inspect
 
 # Correcte import voor de context manager
 from .db.database import get_db_session_for_workspace
@@ -28,6 +29,7 @@ _ = history_service
 mcp_server = FastMCP(name="NovaPort-MCP")
 
 # --- Tool Definities (Workspace-Aware) ---
+# ... (alle 400+ regels met tool-definities blijven hier ongewijzigd) ...
 
 @mcp_server.tool()
 def get_product_context(
@@ -418,9 +420,61 @@ def semantic_search_conport(
         
     return vector_service.search(workspace_id=workspace_id, query_text=query_text, top_k=top_k, filters=filters or None)
 
+
+def _to_camel_case(snake_str: str) -> str:
+    """Helper om snake_case om te zetten naar CamelCase."""
+    components = snake_str.split('_')
+    return ''.join(x.title() for x in components)
+
 @mcp_server.tool()
 def get_conport_schema(
     workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")]
 ) -> Dict[str, Any]:
-    """Retrieves the schema of available ConPort tools and their arguments."""
-    return mcp_server.schema()
+    """
+    Retrieves the schema of all available ConPort tools.
+    The output is a dictionary where each key is a tool name and the value is its JSON schema.
+    """
+    tool_functions = [
+        get_product_context, update_product_context, get_active_context, update_active_context,
+        log_decision, get_decisions, delete_decision_by_id,
+        log_progress, get_progress, update_progress, delete_progress_by_id,
+        log_system_pattern, get_system_patterns, delete_system_pattern_by_id,
+        log_custom_data, get_custom_data, delete_custom_data,
+        export_conport_to_markdown, import_markdown_to_conport,
+        link_conport_items, get_linked_items,
+        search_decisions_fts, search_custom_data_value_fts, search_project_glossary_fts,
+        batch_log_items, get_item_history, get_recent_activity_summary,
+        semantic_search_conport,
+    ]
+
+    final_schemas = {}
+    for func in tool_functions:
+        param_schema = TypeAdapter(func).json_schema()
+        
+        # De beschrijving is de docstring van de functie
+        param_schema['description'] = inspect.getdoc(func) or f"Arguments for {func.__name__}."
+        
+        # De titel wordt programmatisch gegenereerd in CamelCase.
+        param_schema['title'] = f"{_to_camel_case(func.__name__)}Args"
+        
+        # Verwijder de interne Pydantic sleutel voor een schoner schema
+        param_schema.pop("additionalProperties", None)
+        
+        # Verwijder de "title" van de individuele properties voor een 1:1 match met het doelformaat
+        if 'properties' in param_schema:
+            for prop_name, prop_schema in param_schema['properties'].items():
+                prop_schema.pop('title', None)
+
+        final_schemas[func.__name__] = param_schema
+        
+    # Voeg de schema-definitie van deze functie zelf toe
+    this_func_schema = TypeAdapter(get_conport_schema).json_schema()
+    this_func_schema['description'] = inspect.getdoc(get_conport_schema) or ""
+    this_func_schema['title'] = "GetConportSchemaArgs"
+    this_func_schema.pop("additionalProperties", None)
+    if 'properties' in this_func_schema:
+        for prop_name, prop_schema in this_func_schema['properties'].items():
+            prop_schema.pop('title', None)
+    final_schemas['get_conport_schema'] = this_func_schema
+
+    return final_schemas
