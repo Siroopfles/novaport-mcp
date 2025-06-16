@@ -11,8 +11,8 @@ All original features of ConPort have been preserved, but the underlying archite
 This version is superior to the original in the following ways:
 
 -   **Modern Python & Tooling:** Built entirely with Python 3.11+ and managed by [Poetry](https://python-poetry.org/) for robust dependency management and reproducible builds.
--   **Robust Database Layer:** Utilizes the **SQLAlchemy 2.0 ORM**, ensuring type-safe queries and a clean separation between application logic and the database.
--   **Automated Database Migrations:** Thanks to the **Alembic** integration with `autogenerate`, changes to the data models are automatically translated into migration scripts. No more manual database modifications.
+-   **Robust Database Layer:** Utilizes the **SQLAlchemy 2.0 ORM** with a **per-workspace SQLite database**, ensuring project data is fully isolated.
+-   **Automated Database Migrations:** Thanks to the **Alembic** integration, a new workspace database is automatically created and migrated to the latest schema on its first use.
 -   **Clean Architecture:** The project follows a clear separation of layers (`api`, `services`, `schemas`, `db`), making it highly maintainable and easy to extend.
 -   **Reliable Server Communication:** Uses the excellent `fastmcp` library to provide a stable `stdio`-based server, as required by MCP clients like Roo Code.
 -   **Full Type Safety:** Pydantic schemas are used throughout the application for strict data validation, from tool inputs to database outputs.
@@ -36,19 +36,12 @@ This version is superior to the original in the following ways:
     poetry install
     ```
 
-3.  **Configure your database:**
+3.  **Configure your environment:**
     -   Copy the `.env.example` file to a new file named `.env`.
-    -   Open `.env` and modify the `DATABASE_URL`. The default is a local SQLite database, which is perfect for getting started.
-        ```
-        # Example .env file
-        DATABASE_URL="sqlite:///./conport_data/conport.db"
-        ```
+    -   The default settings are fine for local use. The `DATABASE_URL` is a placeholder for command-line tools; the application itself will create a dedicated SQLite database for each project (workspace) it interacts with.
 
-4.  **Run database migrations:**
-    This command creates the database file and all necessary tables according to the models.
-    ```bash
-    poetry run alembic upgrade head
-    ```
+4.  **Database Setup:**
+    There is no manual database setup needed! The server automatically creates and migrates a `conport.db` file inside a `.novaport_data` directory within your project workspace the first time you use a tool for that workspace.
 
 ## Running the Server
 
@@ -58,7 +51,7 @@ To start the server for use with an MCP client like Roo Code, run the following 
 poetry run conport
 ```
 
-The server will start and wait for `stdio` input. The server is multi-project aware; it does not depend on the directory you run it from. The specific project context is determined by the `workspace_id` parameter sent with each tool call.
+The server will start and wait for `stdio` input. It is multi-project aware; the specific project context is determined by the `workspace_id` parameter sent with each tool call.
 
 ## Integration with Roo Code (for NovaPort)
 
@@ -77,7 +70,7 @@ To use this server in VS Code as the backend for NovaPort, configure your worksp
         "conport"
       ],
       // This path MUST point to the directory where you cloned the novaport-mcp repository.
-      "cwd": "D:\\path\\to\\your\\cloned\\novaport-mcp", 
+      "cwd": "/path/to/your/cloned/novaport-mcp", 
       
       "disabled": false,
       "description": "The robust, multi-project MCP server for NovaPort."
@@ -95,10 +88,18 @@ To use this server in VS Code as the backend for NovaPort, configure your worksp
     ```bash
     poetry run pytest
     ```
--   **Creating a New Database Migration:** After modifying the models in `src/conport/db/models.py`:
+-   **Creating a New Database Migration:** After modifying the models in `src/conport/db/models.py`, generate a new migration script:
     ```bash
-    # Let op: De database wordt nu per workspace beheerd.
-    # Deze commando's zijn voor het genereren van het migratiescript.
-    # De migratie zelf wordt automatisch toegepast op een nieuwe workspace-database.
+    # Note: The migration will be applied automatically to new or existing workspace databases.
+    # This command only generates the script for version control.
     poetry run alembic revision --autogenerate -m "A description of your change"
     ```
+-   **Exploring the HTTP API:** The server can also run as a standard FastAPI web server, which is useful for exploring the API endpoints via a web browser.
+    1.  **Start the server with Uvicorn:**
+        ```bash
+        # Note: This mode is for exploration and does not use the per-workspace database logic.
+        poetry run uvicorn src.conport.app_factory:create_app --factory --host 0.0.0.0 --port 8000
+        ```
+    2.  **Open your browser:**
+        -   Interactive API docs (Swagger): [http://localhost:8000/docs](http://localhost:8000/docs)
+        -   Alternative API docs (ReDoc): [http://localhost:8000/redoc](http://localhost:8000/redoc)

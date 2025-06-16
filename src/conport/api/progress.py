@@ -12,7 +12,7 @@ router = APIRouter(prefix="/workspaces/{workspace_id_b64}/progress", tags=["Prog
 def create_progress_entry(workspace_id_b64: str, entry: progress_schema.ProgressEntryCreate, db: Session = Depends(get_db)):
     """Log a new progress entry or task."""
     workspace_id = decode_workspace_id(workspace_id_b64)
-    # De create functie voor progress heeft geen linked items via de API, dit is een MCP-specifieke feature
+    # The create function for progress via HTTP API doesn't support linked items; this is an MCP-specific feature.
     return progress_service.create(db, workspace_id, entry, None, None, "relates_to_progress")
 
 @router.get("/", response_model=List[progress_schema.ProgressEntryRead])
