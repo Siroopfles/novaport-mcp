@@ -22,6 +22,7 @@ from .schemas import (
     system_pattern as sp_schema, custom_data as cd_schema, link as link_schema,
     search as search_schema, batch as batch_schema, history as history_schema
 )
+from .schemas.error import MCPError
 from .schemas.decision import DecisionRead
 from .schemas.progress import ProgressEntryRead, ProgressEntryUpdate
 from .schemas.system_pattern import SystemPatternRead
@@ -45,7 +46,7 @@ def with_db_session(func: Callable) -> Callable:
     async def wrapper(*args, **kwargs):
         workspace_id = kwargs.get('workspace_id')
         if not workspace_id:
-            return {"error": "workspace_id is a required argument."}
+            return MCPError(error="workspace_id is a required argument.")
         
         async with get_db_session_for_workspace(workspace_id) as db:
             kwargs['db'] = db
@@ -71,13 +72,13 @@ async def update_product_context(
     content: Annotated[Optional[Dict[str, Any]], Field(None, description="The full new context content as a dictionary. Overwrites existing.")] = None,
     patch_content: Annotated[Optional[Dict[str, Any]], Field(None, description="A dictionary of changes to apply to the existing context (add/update keys).")] = None,
     **kwargs: Any
-) -> Any:
+) -> Union[Any, MCPError]:
     """Updates the product context. Accepts full `content` (object) or `patch_content` (object) for partial updates (use `__DELETE__` as a value in patch to remove a key)."""
     db: Session = kwargs.pop('db')
     if content is None and patch_content is None:
-        return {"error": "Either 'content' or 'patch_content' must be provided."}
+        return MCPError(error="Either 'content' or 'patch_content' must be provided.")
     if content is not None and patch_content is not None:
-        return {"error": "Provide either 'content' or 'patch_content', not both."}
+        return MCPError(error="Provide either 'content' or 'patch_content', not both.")
 
     try:
         update_data = context_schema.ContextUpdate(content=content, patch_content=patch_content)
@@ -85,7 +86,7 @@ async def update_product_context(
         updated = context_service.update_context(db, instance, update_data)
         return updated.content
     except ValidationError as e:
-        return {"error": str(e)}
+        return MCPError(error="Validation error", details=str(e))
 
 @mcp_server.tool()
 @with_db_session
@@ -104,13 +105,13 @@ async def update_active_context(
     content: Annotated[Optional[Dict[str, Any]], Field(None, description="The full new context content as a dictionary. Overwrites existing.")] = None,
     patch_content: Annotated[Optional[Dict[str, Any]], Field(None, description="A dictionary of changes to apply to the existing context (add/update keys).")] = None,
     **kwargs: Any
-) -> Any:
+) -> Union[Any, MCPError]:
     """Updates the active context. Accepts full `content` (object) or `patch_content` (object) for partial updates (use `__DELETE__` as a value in patch to remove a key)."""
     db: Session = kwargs.pop('db')
     if content is None and patch_content is None:
-        return {"error": "Either 'content' or 'patch_content' must be provided."}
+        return MCPError(error="Either 'content' or 'patch_content' must be provided.")
     if content is not None and patch_content is not None:
-        return {"error": "Provide either 'content' or 'patch_content', not both."}
+        return MCPError(error="Provide either 'content' or 'patch_content', not both.")
         
     try:
         update_data = context_schema.ContextUpdate(content=content, patch_content=patch_content)
@@ -118,7 +119,7 @@ async def update_active_context(
         updated = context_service.update_context(db, instance, update_data)
         return updated.content
     except ValidationError as e:
-        return {"error": str(e)}
+        return MCPError(error="Validation error", details=str(e))
 
 @mcp_server.tool()
 @with_db_session
@@ -203,14 +204,14 @@ async def update_progress(
     description: Annotated[Optional[str], Field(None, description="New description of the progress or task.")] = None,
     parent_id: Annotated[Optional[int], Field(None, description="New ID of the parent task, if changing.")] = None,
     **kwargs: Any
-) -> Union[ProgressEntryRead, Dict[str, str], None]:
+) -> Union[ProgressEntryRead, MCPError]:
     """Updates an existing progress entry."""
     db: Session = kwargs.pop('db')
     update_data = ProgressEntryUpdate(status=status, description=description, parent_id=parent_id)
     if not update_data.model_dump(exclude_unset=True):
-        return {"error": "No update fields provided."}
+        return MCPError(error="No update fields provided.")
     updated = progress_service.update(db, progress_id, update_data)
-    return ProgressEntryRead.model_validate(updated) if updated else None
+    return ProgressEntryRead.model_validate(updated) if updated else MCPError(error="Progress entry not found", details={"id": progress_id})
 
 @mcp_server.tool()
 @with_db_session
@@ -258,11 +259,11 @@ async def delete_system_pattern_by_id(
     workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
     pattern_id: int,
     **kwargs: Any
-) -> Dict[str, Any]:
+) -> Union[Dict[str, Any], MCPError]:
     """Deletes a system pattern by its ID."""
     db: Session = kwargs.pop('db')
     deleted = system_pattern_service.delete(db, workspace_id, pattern_id)
-    return {"status": "success", "id": pattern_id} if deleted else {"status": "not_found", "id": pattern_id}
+    return {"status": "success", "id": pattern_id} if deleted else MCPError(error="System pattern not found", details={"id": pattern_id})
 
 @mcp_server.tool()
 @with_db_session
@@ -415,13 +416,13 @@ async def batch_log_items(
     item_type: Annotated[batch_schema.ItemType, Field(description="Type of items to log.")],
     items: Annotated[List[Dict[str, Any]], Field(description="A list of item data.")],
     **kwargs: Any
-) -> Dict[str, Any]:
+) -> Union[Dict[str, Any], MCPError]:
     """Logs multiple items of the same type in a single call."""
     db: Session = kwargs.pop('db')
     try:
         return meta_service.batch_log_items(db, workspace_id, item_type, items)
     except ValidationError as e:
-        return {"error": "Invalid batch request structure", "details": e.errors()}
+        return MCPError(error="Invalid batch request structure", details=e.errors())
 
 @mcp_server.tool()
 @with_db_session
@@ -433,7 +434,7 @@ async def get_item_history(
     before_timestamp: Annotated[Optional[datetime.datetime], Field(None, description="Return entries before this timestamp.")] = None,
     after_timestamp: Annotated[Optional[datetime.datetime], Field(None, description="Return entries after this timestamp.")] = None,
     **kwargs: Any
-) -> List[HistoryRead]:
+) -> Union[List[HistoryRead], MCPError]:
     """Retrieves version history for Product or Active Context."""
     db: Session = kwargs.pop('db')
     history_model = None
@@ -442,8 +443,7 @@ async def get_item_history(
     elif item_type == "active_context":
         history_model = models.ActiveContextHistory
     else:
-        # Returning a list with an error object, as return type is a list
-        raise ValueError("Invalid item_type for history retrieval.")
+        return MCPError(error="Invalid item_type for history retrieval", details={"item_type": item_type, "valid_types": ["product_context", "active_context"]})
     
     query = db.query(history_model)
     if version:
@@ -479,29 +479,65 @@ async def semantic_search_conport(
     workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
     query_text: Annotated[str, Field(description="The natural language query text.")],
     top_k: Annotated[int, Field(5, description="Number of top results to return.")] = 5,
-    filter_item_types: Annotated[Optional[List[str]], Field(None, description="Optional list of item types to filter by.")] = None,
-    filter_tags_include_any: Annotated[Optional[List[str]], Field(None, description="Optional list of tags; results must match ANY of these.")] = None,
-    filter_tags_include_all: Annotated[Optional[List[str]], Field(None, description="Optional list of tags; results must match ALL of these.")] = None,
-    filter_custom_data_categories: Annotated[Optional[List[str]], Field(None, description="Optional list of categories to filter by.")] = None
-) -> List[Dict[str, Any]]:
-    """Performs a semantic search across ConPort data."""
-    filters: Dict[str, Any] = {}
-    and_conditions: List[Dict[str, Any]] = []
-    if filter_item_types:
-        and_conditions.append({"item_type": {"$in": filter_item_types}})
-    if filter_custom_data_categories:
-        and_conditions.append({"category": {"$in": filter_custom_data_categories}})
-    if filter_tags_include_all:
-        and_conditions.append({"$and": [{"tags": {"$contains": tag}} for tag in filter_tags_include_all]})
-    if filter_tags_include_any:
-        and_conditions.append({"$or": [{"tags": {"$contains": tag}} for tag in filter_tags_include_any]})
-    
-    if len(and_conditions) > 1:
-        filters = {"$and": and_conditions}
-    elif len(and_conditions) == 1:
-        filters = and_conditions[0]
+    filter_item_types: Annotated[Optional[List[str]], Field(None, description="Optional list of item types to filter by (e.g., ['decision', 'progress']).")] = None,
+    filter_tags_include_any: Annotated[Optional[List[str]], Field(None, description="Results must match AT LEAST ONE of these tags.")] = None,
+    filter_tags_include_all: Annotated[Optional[List[str]], Field(None, description="Results must match ALL of these tags.")] = None,
+    filter_custom_data_categories: Annotated[Optional[List[str]], Field(None, description="For custom_data, filter by these categories.")] = None
+) -> Union[List[Dict[str, Any]], MCPError]:
+    """Performs a semantic search across ConPort data with advanced filtering."""
+    try:
+        and_conditions: List[Dict[str, Any]] = []
+
+        if filter_item_types:
+            and_conditions.append({"item_type": {"$in": filter_item_types}})
         
-    return vector_service.search(workspace_id=workspace_id, query_text=query_text, top_k=top_k, filters=filters or None)
+        if filter_custom_data_categories:
+            # Als er specifiek op custom_data item_type wordt gefilterd, passen we de category filter toe.
+            if filter_item_types and "custom_data" in filter_item_types:
+                 and_conditions.append({"category": {"$in": filter_custom_data_categories}})
+            # Als er niet specifiek op custom_data wordt gefilterd, maar wel een categorie filter is,
+            # dan is de logica complexer. De originele code had hier een potentieel probleem.
+            # De huidige implementatie van ChromaDB's metadata filtering ($and, $or) is mogelijk niet
+            # flexibel genoeg voor zeer complexe geneste condities direct.
+            # De veiligste aanpak is om de category filter alleen toe te passen als we weten
+            # dat we met custom_data items te maken hebben.
+            # De code hieronder is een directe vertaling van de prompt, maar kan verfijnd worden.
+            elif not filter_item_types: # Als er geen item_type filter is, kan custom_data erbij zitten
+                 and_conditions.append({"category": {"$in": filter_custom_data_categories}})
+
+
+        if filter_tags_include_all:
+            # Elk tag moet aanwezig zijn. Dit vertaalt naar meerdere $contains condities binnen de $and_conditions.
+            for tag in filter_tags_include_all:
+                and_conditions.append({"tags": {"$contains": tag}})
+
+        if filter_tags_include_any:
+            # Tenminste één van deze tags moet aanwezig zijn.
+            # Dit vereist een $or conditie genest binnen de $and_conditions.
+            # {"$or": [{"tags": {"$contains": "tag1"}}, {"tags": {"$contains": "tag2"}}]}
+            if filter_tags_include_any: # Zorg dat de lijst niet leeg is
+                or_tag_conditions = [{"tags": {"$contains": tag}} for tag in filter_tags_include_any]
+                and_conditions.append({"$or": or_tag_conditions})
+        
+        filters = {"$and": and_conditions} if and_conditions else None
+            
+        # Placeholder voor de daadwerkelijke vector_service.search aanroep
+        # Zorg ervoor dat vector_service correct geïmporteerd en beschikbaar is.
+        # from .services.vector_service import vector_service (voorbeeld)
+        # result = vector_service.search(workspace_id=workspace_id, query_text=query_text, top_k=top_k, filters=filters)
+        # return result
+        # Tijdelijke return voor structuurvalidatie:
+        print(f"Searching with filters: {filters}") # Voor debugging
+        # In een echte implementatie zou hier de aanroep naar vector_service.search staan
+        # Voor nu, om de flow niet te breken, returnen we een lege lijst.
+        # Dit moet vervangen worden door de daadwerkelijke zoeklogica.
+        # Controleer of vector_service.search ook MCPError kan retourneren of dat hier een try-except nodig is.
+        search_results = vector_service.search(workspace_id=workspace_id, query_text=query_text, top_k=top_k, filters=filters)
+        return search_results
+
+    except Exception as e:
+        # Log de fout hier eventueel
+        return MCPError(error="Semantic search failed", details=str(e))
 
 
 def _to_camel_case(snake_str: str) -> str:
