@@ -1,14 +1,14 @@
-from fastapi.testclient import TestClient
-import pytest
-from pathlib import Path
-import shutil
 import base64
-
-from conport.app_factory import create_app
-# Importeer run_migrations_for_workspace en get_db. We hebben Base hier niet meer nodig.
-from conport.db.database import get_db, run_migrations_for_workspace
+from pathlib import Path
+import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+from conport.app_factory import create_app
+from conport.db.database import get_db, run_migrations_for_workspace
+from conport.services import vector_service
+from .test_utils import robust_rmtree
 
 # Maak de FastAPI app aan voor de tests
 app = create_app()
@@ -60,14 +60,12 @@ def client():
     TestingSessionLocal.close_all()
     engine.dispose()
     
-    # Ruim de test-workspace op na alle tests in deze module
-    if TEST_WORKSPACE_DIR.exists():
-        try:
-            shutil.rmtree(TEST_WORKSPACE_DIR)
-        except PermissionError:
-            import time
-            time.sleep(1)  # Geef Windows tijd om handles vrij te geven
-            shutil.rmtree(TEST_WORKSPACE_DIR)
+    # Clean up ChromaDB client voor de test workspace
+    workspace_path = str(TEST_WORKSPACE_DIR.resolve())
+    vector_service.cleanup_chroma_client(workspace_path)
+    
+    # Gebruik robuuste rmtree voor cleanup
+    robust_rmtree(TEST_WORKSPACE_DIR)
 
 def b64_encode(s: str) -> str:
     """Helper om paden te encoderen voor test-URLs."""

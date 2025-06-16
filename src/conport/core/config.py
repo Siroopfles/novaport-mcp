@@ -54,3 +54,6 @@ def decode_workspace_id(encoded_id: str) -> str:
         raise ValueError("Ongeldige workspace_id encoding.")
 
 settings = Settings()
+
+# ChromaDB configuratie
+CHROMA_DEFAULT_COLLECTION_NAME = "conport_default"

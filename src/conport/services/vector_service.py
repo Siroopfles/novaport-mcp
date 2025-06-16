@@ -22,41 +22,72 @@ def get_embedding_model() -> SentenceTransformer:
         log.info("Embedding model geladen.")
     return _model
 
+# Constanten voor cleanup delays
+CHROMA_CLEANUP_DELAY = 2.0
+CHROMA_GC_DELAY = 0.5
+
 def cleanup_chroma_client(workspace_id: str):
     """Sluit de ChromaDB client voor een specifieke workspace."""
     global _chroma_clients, _collections
-    if workspace_id in _chroma_clients:
+    
+    # Bepaal het db_path voor de workspace
+    db_path = str(Path(core_config.get_vector_db_path_for_workspace(workspace_id)).resolve())
+    log.info(f"Cleaning up ChromaDB client voor workspace: {workspace_id} (db_path: {db_path})")
+    
+    if db_path in _chroma_clients:
         try:
-            # Verwijder eerst alle collection caches voor deze workspace
+            client = _chroma_clients[db_path]
+            
+            # Reset eerst alle collections
+            for collection in client.list_collections():
+                collection_name = collection.name
+                log.info(f"Cleaning up collection: {collection_name} (type: {type(collection_name)})")
+                
+                # Verwijder eerst alle documenten
+                if collection.count() > 0:
+                    collection.delete(ids=collection.get()["ids"])
+                # Verwijder dan de collectie zelf
+                client.delete_collection(name=collection_name)
+            
+            # Verwijder collection caches
             cache_keys = [k for k in _collections.keys() if k.startswith(f"{workspace_id}_")]
             for key in cache_keys:
                 del _collections[key]
             
-            # Sluit en verwijder de client
-            client = _chroma_clients[workspace_id]
-            client.reset()  # Reset de client state
-            del _chroma_clients[workspace_id]
-            log.info(f"ChromaDB client opgeruimd voor workspace: {workspace_id}")
+            # Reset en sluit de client
+            client.reset()
+            import time
+            time.sleep(CHROMA_CLEANUP_DELAY)  # Geef Windows meer tijd om handles vrij te geven
+            
+            # Forceer garbage collection om resources vrij te geven
+            import gc
+            gc.collect()
+            time.sleep(CHROMA_GC_DELAY)  # Extra wachttijd na garbage collection
+            
+            del _chroma_clients[db_path]
+            log.info(f"ChromaDB client succesvol opgeruimd voor workspace: {workspace_id} (db_path: {db_path})")
         except Exception as e:
-            log.error(f"Fout bij opruimen ChromaDB client voor {workspace_id}: {e}")
+            log.error(f"Fout bij opruimen ChromaDB client voor {workspace_id} (db_path: {db_path}): {e}")
+            raise  # Propagate de error zodat tests falen bij cleanup problemen
 
 def get_chroma_client(workspace_id: str) -> Client:
     """Initialize een ChromaDB client voor een workspace met correct geformatteerde paden."""
     global _chroma_clients
-    if workspace_id not in _chroma_clients:
-        log.info(f"Initialiseren van ChromaDB client voor workspace: {workspace_id}")
-        db_path = core_config.get_vector_db_path_for_workspace(workspace_id)
-        
-        # Zorg voor een Windows-compatible pad
-        safe_path = str(Path(db_path).resolve())
+    db_path = str(Path(core_config.get_vector_db_path_for_workspace(workspace_id)).resolve())
+    
+    if db_path not in _chroma_clients:
+        log.info(f"Initialiseren van ChromaDB client voor workspace: {workspace_id} (db_path: {db_path})")
         
         client = cast(Client, chromadb.PersistentClient(
-            path=safe_path,
-            settings=ChromaSettings(anonymized_telemetry=False)
+            path=db_path,
+            settings=ChromaSettings(
+                anonymized_telemetry=False,
+                allow_reset=True
+            )
         ))
-        _chroma_clients[workspace_id] = client
-        log.info(f"ChromaDB client geïnitialiseerd op {safe_path}")
-    return _chroma_clients[workspace_id]
+        _chroma_clients[db_path] = client
+        log.info(f"ChromaDB client geïnitialiseerd op {db_path}")
+    return _chroma_clients[db_path]
 
 def get_collection(workspace_id: str, collection_name: str = "conport_default") -> chromadb.Collection:
     global _collections

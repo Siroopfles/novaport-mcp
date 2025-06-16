@@ -6,6 +6,7 @@ import base64
 
 from conport.app_factory import create_app
 from conport.db.database import get_db, run_migrations_for_workspace
+from conport.db import models
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -47,9 +48,29 @@ app.dependency_overrides[get_db] = override_get_db
 @pytest.fixture(scope="module")
 def client():
     """Create een TestClient die de overriden dependency gebruikt."""
-    yield TestClient(app)
+    # Reset de database voor de tests
+    db = TestingSessionLocal()
+    try:
+        db.query(models.ProductContext).delete()
+        db.query(models.ActiveContext).delete()
+        db.commit()
+    finally:
+        db.close()
+    
+    client = TestClient(app)
+    yield client
+    
+    # Cleanup na de tests
+    TestingSessionLocal.close_all()
+    engine.dispose()
+    
     if TEST_WORKSPACE_DIR.exists():
-        shutil.rmtree(TEST_WORKSPACE_DIR)
+        try:
+            shutil.rmtree(TEST_WORKSPACE_DIR)
+        except PermissionError:
+            import time
+            time.sleep(1)  # Geef Windows tijd om handles vrij te geven
+            shutil.rmtree(TEST_WORKSPACE_DIR)
 
 def b64_encode(s: str) -> str:
     """Helper om paden te encoderen voor test-URLs."""

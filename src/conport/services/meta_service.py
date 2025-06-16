@@ -51,4 +51,4 @@ def batch_log_items(db: Session, workspace_id: str, item_type: str, items: List[
         except (ValidationError, TypeError) as e:
             errors.append({"item": item_data, "error": str(e)})
             
-    return {"succeeded": success_count, "failed": len(errors), "errors": errors}
+    return {"succeeded": success_count, "failed": len(errors), "details": errors}

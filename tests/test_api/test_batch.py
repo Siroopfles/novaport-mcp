@@ -1,11 +1,13 @@
-from fastapi.testclient import TestClient
-import pytest
-from pathlib import Path
-import shutil
 import base64
+from pathlib import Path
+import pytest
+from fastapi.testclient import TestClient
 
 from conport.app_factory import create_app
 from conport.db.database import get_db, run_migrations_for_workspace
+from conport.services import vector_service
+from .test_utils import robust_rmtree
+from conport.db.models import SystemPattern, Decision, ProgressEntry, CustomData
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -44,12 +46,33 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 
+@pytest.fixture(scope="function")
+def clean_db_session():
+    """Maak een schone database sessie voor elke test."""
+    db = TestingSessionLocal()
+    try:
+        # Verwijder alle rijen uit de tabellen
+        db.query(SystemPattern).delete()
+        db.query(Decision).delete()
+        db.query(ProgressEntry).delete()
+        db.query(CustomData).delete()
+        db.commit()
+        yield db
+    finally:
+        db.close()
+
 @pytest.fixture(scope="module")
 def client():
     """Create een TestClient die de overriden dependency gebruikt."""
-    yield TestClient(app)
-    if TEST_WORKSPACE_DIR.exists():
-        shutil.rmtree(TEST_WORKSPACE_DIR)
+    client = TestClient(app)
+    yield client
+    
+    # Clean up ChromaDB client voor de test workspace
+    workspace_path = str(TEST_WORKSPACE_DIR.resolve())
+    vector_service.cleanup_chroma_client(workspace_path)
+    
+    # Gebruik robuuste rmtree voor cleanup
+    robust_rmtree(TEST_WORKSPACE_DIR)
 
 def b64_encode(s: str) -> str:
     """Helper om paden te encoderen voor test-URLs."""

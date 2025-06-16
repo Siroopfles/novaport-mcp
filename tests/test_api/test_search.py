@@ -1,15 +1,18 @@
-from fastapi.testclient import TestClient
-import pytest
-from pathlib import Path
-import shutil
-import base64
+import gc
+import time
 import tempfile
+import base64
+from pathlib import Path
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from conport.app_factory import create_app
 from conport.db.database import get_db, run_migrations_for_workspace
 from conport.services import vector_service
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from conport.core import config as core_config
+from .test_utils import robust_rmtree
 
 # Maak de FastAPI app aan voor de tests
 app = create_app()
@@ -60,16 +63,10 @@ def client():
     workspace_path = str(TEST_WORKSPACE_DIR.resolve())
     vector_service.cleanup_chroma_client(workspace_path)
     
-    # Verwijder test directories
-    if TEST_WORKSPACE_DIR.exists():
-        try:
-            shutil.rmtree(TEST_WORKSPACE_DIR)
-        except PermissionError:
-            import time
-            time.sleep(1)  # Geef Windows tijd om handles vrij te geven
-            shutil.rmtree(TEST_WORKSPACE_DIR)
+    # Gebruik robuuste rmtree voor cleanup
+    robust_rmtree(TEST_WORKSPACE_DIR)
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def temp_chroma_db():
     """Setup een tijdelijke ChromaDB voor de tests."""
     # Maak een tijdelijke directory voor ChromaDB
@@ -87,20 +84,30 @@ def temp_chroma_db():
     
     yield temp_path
     
-    # Cleanup en wacht even voor Windows bestandshandles
+    # Cleanup ChromaDB client met het correcte gemockte pad
     workspace_path = str(TEST_WORKSPACE_DIR.resolve())
-    vector_service.cleanup_chroma_client(workspace_path)
+    mocked_db_path = mock_get_vector_db_path(workspace_path)
+    if mocked_db_path in vector_service._chroma_clients:
+        client_to_reset = vector_service._chroma_clients[mocked_db_path]
+        # Reset de client
+        try:
+            client_to_reset.reset()
+            collection_name = vector_service.core_config.CHROMA_DEFAULT_COLLECTION_NAME
+            client_to_reset.delete_collection(name=collection_name)
+        except Exception:
+            pass  # Negeer fouten bij collection delete
+        del vector_service._chroma_clients[mocked_db_path]
+    
+    # Wacht voor garbage collection
+    time.sleep(vector_service.CHROMA_CLEANUP_DELAY)
+    gc.collect()
+    time.sleep(vector_service.CHROMA_GC_DELAY)
     
     # Herstel de originele functie
     vector_service.core_config.get_vector_db_path_for_workspace = original_get_vector_db_path
     
-    # Ruim de tijdelijke directory op met retry
-    try:
-        shutil.rmtree(temp_dir, ignore_errors=True)
-    except PermissionError:
-        import time
-        time.sleep(1)  # Geef Windows tijd om handles vrij te geven
-        shutil.rmtree(temp_dir, ignore_errors=True)
+    # Gebruik robuuste rmtree voor cleanup
+    robust_rmtree(temp_dir)
 
 def b64_encode(s: str) -> str:
     """Helper om paden te encoderen voor test-URLs."""
