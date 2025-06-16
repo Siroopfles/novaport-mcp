@@ -1,18 +1,20 @@
-from sqlalchemy import create_engine, pool
+# FILE: src/conport/db/database.py
+# VERVANG DE VOLLEDIGE INHOUD VAN DIT BESTAND:
+
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 from pathlib import Path
 import logging
 from fastapi import Depends, HTTPException, status
-from typing import Generator
+from typing import AsyncGenerator
 import importlib.resources
-import threading
+import asyncio
 
 from alembic.config import Config
 from alembic import command
 
 from ..core import config as core_config
-from .models import Base
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +23,7 @@ _session_locals = {}
 _workspace_locks = {}
 
 def run_migrations_for_workspace(engine, db_path: Path):
-    """Voert Alembic migraties uit op een BESTAANDE engine verbinding."""
+    """Deze functie is blokkerend en zal in een thread worden uitgevoerd."""
     log.info(f"Alembic migraties uitvoeren voor database: {db_path}...")
     
     package_root = importlib.resources.files('conport')
@@ -31,23 +33,23 @@ def run_migrations_for_workspace(engine, db_path: Path):
     alembic_cfg.set_main_option("script_location", script_location)
     alembic_cfg.set_main_option("sqlalchemy.url", str(engine.url))
     
-    # Voer de upgrade uit binnen een expliciete verbinding en transactie
     with engine.begin() as connection:
         alembic_cfg.attributes['connection'] = connection
         command.upgrade(alembic_cfg, "head")
     log.info("Alembic migraties succesvol gecommit.")
 
-def get_session_local(workspace_id: str) -> sessionmaker:
-    """Haalt of creëert een SessionLocal voor een specifieke workspace op een thread-safe manier."""
+async def get_session_local(workspace_id: str) -> sessionmaker:
+    """Haalt of creëert een SessionLocal voor een specifieke workspace op een thread-safe en async-vriendelijke manier."""
     if workspace_id not in _workspace_locks:
-        _workspace_locks[workspace_id] = threading.Lock()
+        _workspace_locks[workspace_id] = asyncio.Lock()
     
     workspace_lock = _workspace_locks[workspace_id]
 
     if workspace_id in _session_locals:
         return _session_locals[workspace_id]
 
-    with workspace_lock:
+    async with workspace_lock:
+        # Dubbelcheck na het verkrijgen van de lock
         if workspace_id in _session_locals:
             return _session_locals[workspace_id]
 
@@ -56,17 +58,18 @@ def get_session_local(workspace_id: str) -> sessionmaker:
             db_url = core_config.get_database_url_for_workspace(workspace_id)
             db_path = Path(db_url.replace("sqlite:///", ""))
             
-            # Maak de engine aan. Deze zal de .db file aanraken/aanmaken.
+            # Engine creatie is snel, kan in de main thread blijven.
             engine = create_engine(db_url, connect_args={"check_same_thread": False})
             
-            # Geef deze engine direct door aan de migratiefunctie.
-            run_migrations_for_workspace(engine, db_path)
+            # VOER DE LANGE MIGRATIE UIT IN EEN APARTE THREAD
+            # Dit voorkomt dat de server event loop blokkeert.
+            await asyncio.to_thread(run_migrations_for_workspace, engine, db_path)
 
             _engines[workspace_id] = engine
             _session_locals[workspace_id] = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-            log.info(f"Database sessie succesvol geconfigureerd en gecached voor workspace '{workspace_id}'")
+            log.info(f"Database sessie succesvol geconfigureerd en gecached voor '{workspace_id}'")
         except Exception as e:
-            log.error(f"Fout bij het initialiseren van de database voor workspace '{workspace_id}': {e}", exc_info=True)
+            log.error(f"Fout bij het initialiseren van de database voor '{workspace_id}': {e}", exc_info=True)
             if workspace_id in _session_locals: del _session_locals[workspace_id]
             if workspace_id in _engines: del _engines[workspace_id]
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database initialization error: {e}")
@@ -74,11 +77,11 @@ def get_session_local(workspace_id: str) -> sessionmaker:
     return _session_locals[workspace_id]
 
 # Dependency voor de FastAPI HTTP API
-def get_db(workspace_id_b64: str) -> Generator[Session, None, None]:
+async def get_db(workspace_id_b64: str) -> AsyncGenerator[Session, None]:
     db = None
     try:
         workspace_id = core_config.decode_workspace_id(workspace_id_b64)
-        SessionLocal = get_session_local(workspace_id)
+        SessionLocal = await get_session_local(workspace_id)
         db = SessionLocal()
         yield db
     except ValueError as e:
@@ -87,16 +90,17 @@ def get_db(workspace_id_b64: str) -> Generator[Session, None, None]:
         if db:
             db.close()
 
-# Context Manager voor de MCP tools
-@contextmanager
-def get_db_session_for_workspace(workspace_id: str):
+# Context Manager voor de MCP tools - NU ASYNCHROON
+@asynccontextmanager
+async def get_db_session_for_workspace(workspace_id: str) -> AsyncGenerator[Session, None]:
     db = None
     try:
-        SessionLocal = get_session_local(workspace_id)
+        SessionLocal = await get_session_local(workspace_id)
         db = SessionLocal()
         yield db
     except Exception as e:
         log.error(f"Fout tijdens het ophalen van de DB-sessie voor workspace '{workspace_id}': {e}", exc_info=True)
+        # Rollback is niet nodig als autocommit False is en we geen commit doen bij error
         raise
     finally:
         if db:
