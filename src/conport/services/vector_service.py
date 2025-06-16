@@ -49,13 +49,13 @@ def cleanup_chroma_client(workspace_id: str):
                 # Verwijder dan de collectie zelf
                 client.delete_collection(name=collection_name)
             
-            # Verwijder collection caches
-            cache_keys = [k for k in _collections.keys() if k.startswith(f"{workspace_id}_")]
-            for key in cache_keys:
-                del _collections[key]
-            
             # Reset en sluit de client
             client.reset()
+            
+            # Verwijder ALLE collection caches voor deze workspace
+            # Dit is cruciaal na een reset omdat alle collections ongeldig zijn
+            _collections.clear()  # Verwijder alle collection caches
+            
             import time
             time.sleep(CHROMA_CLEANUP_DELAY)  # Geef Windows meer tijd om handles vrij te geven
             
@@ -90,15 +90,41 @@ def get_chroma_client(workspace_id: str) -> Client:
     return _chroma_clients[db_path]
 
 def get_collection(workspace_id: str, collection_name: str = "conport_default") -> chromadb.Collection:
+    """Haalt een ChromaDB collection op, met robuuste error handling en cache management."""
     global _collections
     cache_key = f"{workspace_id}_{collection_name}"
 
-    if cache_key not in _collections:
+    try:
+        # Probeer eerst uit de cache
+        if cache_key in _collections:
+            try:
+                # Test of de cached collection nog geldig is
+                _ = _collections[cache_key].count()
+                return _collections[cache_key]
+            except Exception:
+                # Als de collection ongeldig is, verwijder uit cache
+                log.warning(f"Ongeldige collection in cache voor {cache_key}, wordt opnieuw aangemaakt")
+                _collections.pop(cache_key, None)
+
+        # Als we hier komen, moeten we een nieuwe collection maken
         client = get_chroma_client(workspace_id)
-        collection = client.get_or_create_collection(name=collection_name)
-        _collections[cache_key] = collection
         
-    return _collections[cache_key]
+        try:
+            # Probeer eerst de collection direct op te halen
+            collection = client.get_collection(name=collection_name)
+            log.info(f"Bestaande collection '{collection_name}' gevonden voor {workspace_id}")
+        except Exception as e:
+            # Als de collection niet bestaat, maak een nieuwe aan
+            log.info(f"Collection '{collection_name}' niet gevonden voor {workspace_id}, wordt aangemaakt: {str(e)}")
+            collection = client.create_collection(name=collection_name)
+        
+        # Update de cache alleen als we een werkende collection hebben
+        _collections[cache_key] = collection
+        return collection
+        
+    except Exception as e:
+        log.error(f"Fout bij ophalen/aanmaken collection voor {workspace_id}: {str(e)}")
+        raise
 
 def generate_embedding(text: str) -> List[float]:
     model = get_embedding_model()

@@ -252,7 +252,7 @@ def test_batch_log_items_custom_data(client: TestClient):
     assert result["succeeded"] == 2
     assert result["failed"] == 1
 
-def test_batch_log_items_system_patterns(client: TestClient):
+def test_batch_log_items_system_patterns(client: TestClient, clean_db_session):
     """Test batch logging voor system_pattern items."""
     workspace_path = str(TEST_WORKSPACE_DIR.resolve())
     workspace_b64 = b64_encode(workspace_path)
