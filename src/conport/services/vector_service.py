@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import List, Dict, Any, Optional, cast
 from sentence_transformers import SentenceTransformer
 import chromadb
@@ -21,18 +22,40 @@ def get_embedding_model() -> SentenceTransformer:
         log.info("Embedding model geladen.")
     return _model
 
+def cleanup_chroma_client(workspace_id: str):
+    """Sluit de ChromaDB client voor een specifieke workspace."""
+    global _chroma_clients, _collections
+    if workspace_id in _chroma_clients:
+        try:
+            # Verwijder eerst alle collection caches voor deze workspace
+            cache_keys = [k for k in _collections.keys() if k.startswith(f"{workspace_id}_")]
+            for key in cache_keys:
+                del _collections[key]
+            
+            # Sluit en verwijder de client
+            client = _chroma_clients[workspace_id]
+            client.reset()  # Reset de client state
+            del _chroma_clients[workspace_id]
+            log.info(f"ChromaDB client opgeruimd voor workspace: {workspace_id}")
+        except Exception as e:
+            log.error(f"Fout bij opruimen ChromaDB client voor {workspace_id}: {e}")
+
 def get_chroma_client(workspace_id: str) -> Client:
+    """Initialize een ChromaDB client voor een workspace met correct geformatteerde paden."""
     global _chroma_clients
     if workspace_id not in _chroma_clients:
         log.info(f"Initialiseren van ChromaDB client voor workspace: {workspace_id}")
         db_path = core_config.get_vector_db_path_for_workspace(workspace_id)
         
+        # Zorg voor een Windows-compatible pad
+        safe_path = str(Path(db_path).resolve())
+        
         client = cast(Client, chromadb.PersistentClient(
-            path=db_path,
+            path=safe_path,
             settings=ChromaSettings(anonymized_telemetry=False)
         ))
         _chroma_clients[workspace_id] = client
-        log.info(f"ChromaDB client geïnitialiseerd op {db_path}")
+        log.info(f"ChromaDB client geïnitialiseerd op {safe_path}")
     return _chroma_clients[workspace_id]
 
 def get_collection(workspace_id: str, collection_name: str = "conport_default") -> chromadb.Collection:

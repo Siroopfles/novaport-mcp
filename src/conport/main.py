@@ -9,6 +9,7 @@ import datetime
 import inspect
 from functools import wraps
 from sqlalchemy.orm import Session
+import dictdiffer
 
 # Correcte import voor de ASYNCHRONE context manager
 from .db.database import get_db_session_for_workspace
@@ -420,7 +421,14 @@ async def batch_log_items(
     """Logs multiple items of the same type in a single call."""
     db: Session = kwargs.pop('db')
     try:
-        return meta_service.batch_log_items(db, workspace_id, item_type, items)
+        result = meta_service.batch_log_items(db, workspace_id, item_type, items)
+        # Als er errors zijn, verpak ze in de MCPError structuur met details
+        if result["errors"]:
+            return MCPError(
+                error="Some items failed validation",
+                details=result
+            )
+        return result
     except ValidationError as e:
         return MCPError(error="Invalid batch request structure", details=e.errors())
 
@@ -581,3 +589,69 @@ async def get_conport_schema(
     final_schemas['get_conport_schema'] = this_func_schema
 
     return final_schemas
+
+@mcp_server.tool()
+@with_db_session
+async def diff_context_versions(
+    workspace_id: Annotated[str, Field(description="Identifier for the workspace")],
+    item_type: Annotated[str, Field(description="Type of the item (e.g., 'product_context', 'active_context')")],
+    version_a: Annotated[int, Field(description="Version number of the first item")],
+    version_b: Annotated[int, Field(description="Version number of the second item")],
+    **kwargs: Any
+) -> Union[List[Any], MCPError]:
+    """
+    Compares two versions of a ConPort item and returns the differences.
+    
+    This function retrieves two specific versions of a context item (product_context or active_context)
+    and compares their content using dictdiffer to show what has changed between versions.
+    
+    Args:
+        workspace_id: Identifier for the workspace
+        item_type: Type of the item ('product_context' or 'active_context')
+        version_a: Version number of the first item to compare
+        version_b: Version number of the second item to compare
+        
+    Returns:
+        List of differences found by dictdiffer, or MCPError if versions not found
+    """
+    db: Session = kwargs.pop('db')
+    
+    # Determine which history model to use based on item_type
+    history_model = None
+    if item_type == "product_context":
+        history_model = models.ProductContextHistory
+    elif item_type == "active_context":
+        history_model = models.ActiveContextHistory
+    else:
+        return MCPError(
+            error="Invalid item_type for diff comparison",
+            details={
+                "item_type": item_type,
+                "valid_types": ["product_context", "active_context"]
+            }
+        )
+    
+    # Retrieve version A
+    version_a_record = db.query(history_model).filter_by(version=version_a).first()
+    if not version_a_record:
+        return MCPError(
+            error=f"Version {version_a} not found",
+            details={"item_type": item_type, "version": version_a}
+        )
+    
+    # Retrieve version B
+    version_b_record = db.query(history_model).filter_by(version=version_b).first()
+    if not version_b_record:
+        return MCPError(
+            error=f"Version {version_b} not found",
+            details={"item_type": item_type, "version": version_b}
+        )
+    
+    # Extract content from both versions
+    content_a = version_a_record.content
+    content_b = version_b_record.content
+    
+    # Perform the diff comparison
+    diff_result = list(dictdiffer.diff(content_a, content_b))
+    
+    return diff_result

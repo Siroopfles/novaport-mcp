@@ -53,10 +53,21 @@ app.dependency_overrides[get_db] = override_get_db
 @pytest.fixture(scope="module")
 def client():
     """Create een TestClient die de overriden dependency gebruikt."""
-    yield TestClient(app)
-    # Ruim de test-workspace op na alle tests in deze module.
+    client = TestClient(app)
+    yield client
+    
+    # Cleanup database resources
+    TestingSessionLocal.close_all()
+    engine.dispose()
+    
+    # Ruim de test-workspace op na alle tests in deze module
     if TEST_WORKSPACE_DIR.exists():
-        shutil.rmtree(TEST_WORKSPACE_DIR)
+        try:
+            shutil.rmtree(TEST_WORKSPACE_DIR)
+        except PermissionError:
+            import time
+            time.sleep(1)  # Geef Windows tijd om handles vrij te geven
+            shutil.rmtree(TEST_WORKSPACE_DIR)
 
 def b64_encode(s: str) -> str:
     """Helper om paden te encoderen voor test-URLs."""

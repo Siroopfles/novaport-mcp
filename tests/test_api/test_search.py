@@ -49,9 +49,25 @@ app.dependency_overrides[get_db] = override_get_db
 @pytest.fixture(scope="module")
 def client():
     """Create een TestClient die de overriden dependency gebruikt."""
-    yield TestClient(app)
+    client = TestClient(app)
+    yield client
+    
+    # Cleanup database resources
+    TestingSessionLocal.close_all()
+    engine.dispose()
+    
+    # Clean up ChromaDB client voor de test workspace
+    workspace_path = str(TEST_WORKSPACE_DIR.resolve())
+    vector_service.cleanup_chroma_client(workspace_path)
+    
+    # Verwijder test directories
     if TEST_WORKSPACE_DIR.exists():
-        shutil.rmtree(TEST_WORKSPACE_DIR)
+        try:
+            shutil.rmtree(TEST_WORKSPACE_DIR)
+        except PermissionError:
+            import time
+            time.sleep(1)  # Geef Windows tijd om handles vrij te geven
+            shutil.rmtree(TEST_WORKSPACE_DIR)
 
 @pytest.fixture(scope="module")
 def temp_chroma_db():
@@ -64,17 +80,27 @@ def temp_chroma_db():
     original_get_vector_db_path = vector_service.core_config.get_vector_db_path_for_workspace
     
     def mock_get_vector_db_path(workspace_id: str) -> str:
-        return str(temp_path / f"chroma_{workspace_id}")
+        # Gebruik Path voor correcte Windows pad handling
+        return str(Path(temp_path) / f"chroma_{Path(workspace_id).name}")
     
     vector_service.core_config.get_vector_db_path_for_workspace = mock_get_vector_db_path
     
     yield temp_path
     
+    # Cleanup en wacht even voor Windows bestandshandles
+    workspace_path = str(TEST_WORKSPACE_DIR.resolve())
+    vector_service.cleanup_chroma_client(workspace_path)
+    
     # Herstel de originele functie
     vector_service.core_config.get_vector_db_path_for_workspace = original_get_vector_db_path
     
-    # Ruim de tijdelijke directory op
-    shutil.rmtree(temp_dir, ignore_errors=True)
+    # Ruim de tijdelijke directory op met retry
+    try:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+    except PermissionError:
+        import time
+        time.sleep(1)  # Geef Windows tijd om handles vrij te geven
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 def b64_encode(s: str) -> str:
     """Helper om paden te encoderen voor test-URLs."""
