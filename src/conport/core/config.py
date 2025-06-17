@@ -1,10 +1,13 @@
-from pydantic_settings import BaseSettings
-from pathlib import Path
 import base64
 import binascii
+from pathlib import Path
+
+from pydantic_settings import BaseSettings
+
 
 class Settings(BaseSettings):
     """Loads application configuration from a .env file and environment variables."""
+
     PROJECT_NAME: str = "NovaPort MCP"
     EMBEDDING_MODEL_NAME: str = 'all-MiniLM-L6-v2'
 
@@ -14,8 +17,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./dummy_for_alembic_cli.db"
 
 def get_data_dir_for_workspace(workspace_id: str) -> Path:
-    """
-    Creates and returns a dedicated data directory within the specified workspace.
+    """Creates and returns a dedicated data directory within the specified workspace.
     This ensures isolation per project. The folder is named .novaport_data.
     """
     workspace_path = Path(workspace_id)
@@ -24,7 +26,7 @@ def get_data_dir_for_workspace(workspace_id: str) -> Path:
             workspace_path.mkdir(parents=True, exist_ok=True)
         except Exception as e:
             raise ValueError(f"The specified workspace_id is not a valid directory and could not be created: {workspace_id} - Error: {e}")
-    
+
     data_dir = workspace_path / ".novaport_data"
     data_dir.mkdir(exist_ok=True)
     return data_dir

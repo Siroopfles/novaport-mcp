@@ -1,11 +1,22 @@
+
 from fastapi import FastAPI
+
+from .api import (
+    batch,
+    context,
+    custom_data,
+    decisions,
+    history,
+    io,
+    links,
+    meta,
+    progress,
+    search,
+    system_patterns,
+)
 from .core.config import settings
 from .services import history_service
-from .api import (
-    decisions, context, progress, system_patterns, 
-    custom_data, search, links, batch, meta, io, history
-)
-import base64
+
 
 def create_app() -> FastAPI:
     """Factory to create the FastAPI application instance."""
@@ -37,5 +48,5 @@ def create_app() -> FastAPI:
     app.include_router(meta.router)
     app.include_router(io.router)
     app.include_router(history.router)
-        
+
     return app

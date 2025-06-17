@@ -1,6 +1,9 @@
 import datetime
 from typing import Optional
+
 from pydantic import BaseModel, ConfigDict
+
+
 class LinkBase(BaseModel):
     source_item_type: str
     source_item_id: str

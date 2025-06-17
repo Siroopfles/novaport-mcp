@@ -1,11 +1,14 @@
-import json, logging
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import NoResultFound
-from sqlalchemy import text
+import json
+import logging
 from typing import List
-from . import vector_service
+
+from sqlalchemy import text
+from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm import Session
+
 from ..db import models
 from ..schemas import custom_data as cd_schema
+from . import vector_service
 
 log = logging.getLogger(__name__)
 

@@ -1,10 +1,12 @@
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
+from ..core.config import decode_workspace_id
+from ..db.database import get_db
 from ..schemas import custom_data as cd_schema
 from ..services import custom_data_service
-from ..db.database import get_db
-from ..core.config import decode_workspace_id
 
 router = APIRouter(prefix="/workspaces/{workspace_id_b64}/custom-data", tags=["Custom Data"])
 

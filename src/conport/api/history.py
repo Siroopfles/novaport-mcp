@@ -1,8 +1,10 @@
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+
+from ..db import database, models
 from ..schemas import history as history_schema
-from ..db import models, database
 
 router = APIRouter(prefix="/workspaces/{workspace_id_b64}/history", tags=["History"])
 

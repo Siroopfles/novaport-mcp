@@ -1,10 +1,12 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, status, HTTPException
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
+from ..core.config import decode_workspace_id
+from ..db.database import get_db
 from ..schemas import progress as progress_schema
 from ..services import progress_service
-from ..db.database import get_db
-from ..core.config import decode_workspace_id
 
 router = APIRouter(prefix="/workspaces/{workspace_id_b64}/progress", tags=["Progress"])
 

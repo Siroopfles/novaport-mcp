@@ -1,11 +1,11 @@
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+
 from alembic import context
+from conport.core.config import settings
 
 # Import the Base and settings from our application
 from conport.db.models import Base
-from conport.core.config import settings
+from sqlalchemy import engine_from_config, pool
 
 config = context.config
 
@@ -30,7 +30,6 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-    
     # Get the connection that was passed by the application.
     # This will be a Connection object if run from the app,
     # and None if run from the Alembic CLI.
@@ -63,7 +62,7 @@ def run_migrations_online() -> None:
             connection=connectable,
             target_metadata=target_metadata
         )
-        
+
         # The transaction is already started, but Alembic's context manager
         # will "join" the existing transaction instead of starting a new one.
         with context.begin_transaction():

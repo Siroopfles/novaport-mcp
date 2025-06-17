@@ -1,13 +1,14 @@
 import base64
 from pathlib import Path
+
 import pytest
+from conport.app_factory import create_app
+from conport.db.database import get_db, run_migrations_for_workspace
+from conport.services import vector_service
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from conport.app_factory import create_app
-from conport.db.database import get_db, run_migrations_for_workspace
-from conport.services import vector_service
 from .test_utils import robust_rmtree
 
 # Create the FastAPI app for the tests
@@ -37,8 +38,7 @@ run_migrations_for_workspace(engine, db_path)
 
 
 def override_get_db():
-    """
-    Override the 'get_db' dependency for the tests.
+    """Override the 'get_db' dependency for the tests.
     This function ignores the workspace_id from the URL and always returns the test database.
     """
     db = TestingSessionLocal()
@@ -55,15 +55,15 @@ def client():
     """Create a TestClient that uses the overridden dependency."""
     client = TestClient(app)
     yield client
-    
+
     # Cleanup database resources
     TestingSessionLocal.close_all()
     engine.dispose()
-    
+
     # Clean up ChromaDB client for the test workspace
     workspace_path = str(TEST_WORKSPACE_DIR.resolve())
     vector_service.cleanup_chroma_client(workspace_path)
-    
+
     # Use robust rmtree for cleanup
     robust_rmtree(TEST_WORKSPACE_DIR)
 
@@ -77,7 +77,7 @@ def test_create_and_read_decision(client: TestClient):
     # that the test database is used, but the URL must still be valid.
     workspace_path = str(TEST_WORKSPACE_DIR.resolve())
     workspace_b64 = b64_encode(workspace_path)
-    
+
     # 1. Create a decision
     response_create = client.post(
         f"/workspaces/{workspace_b64}/decisions/",
@@ -107,7 +107,7 @@ def test_create_and_read_decision(client: TestClient):
     # 4. Delete the decision
     response_delete = client.delete(f"/workspaces/{workspace_b64}/decisions/{decision_id}")
     assert response_delete.status_code == 204, response_delete.text
-    
+
     # 5. Check if it was deleted
     response_read_after_delete = client.get(f"/workspaces/{workspace_b64}/decisions/{decision_id}")
     assert response_read_after_delete.status_code == 404, response_read_after_delete.text

@@ -1,5 +1,7 @@
+from typing import Any, Dict, Type, TypeVar, Union, cast
+
 from sqlalchemy.orm import Session
-from typing import Union, Type, TypeVar, Dict, Any, cast
+
 from ..db import models
 from ..schemas import context as context_schema
 
@@ -49,5 +51,5 @@ def update_context(
         db.add(instance)
         db.commit()
         db.refresh(instance)
-        
+
     return instance

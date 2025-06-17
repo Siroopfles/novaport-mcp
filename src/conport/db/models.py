@@ -1,7 +1,16 @@
 import datetime
-from typing import Any
-from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import relationship, declarative_base, DeclarativeBase
+
+from sqlalchemy import (
+    JSON,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import DeclarativeBase, declarative_base, relationship
 
 # Define the Base HERE, within the models.py file.
 Base: type[DeclarativeBase] = declarative_base()

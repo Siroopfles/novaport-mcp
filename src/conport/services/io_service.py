@@ -1,9 +1,11 @@
 import logging
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any, Dict
+
 from sqlalchemy.orm import Session
-from . import decision_service
+
 from ..schemas import decision as decision_schema
+from . import decision_service
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +33,14 @@ def export_to_markdown(db: Session, export_path: Path) -> Dict[str, Any]:
 def import_from_markdown(db: Session, workspace_id: str, import_path: Path) -> Dict[str, Any]:
     if not (import_path / "decisions.md").exists():
         return {"status": "failed", "error": "decisions.md not found"}
-    
+
     with open(import_path / "decisions.md", "r", encoding="utf-8") as f:
         content = f.read()
-    
+
     decision_blocks = content.split('---')
     imported_count = 0
     failed_count = 0
-    
+
     for block in decision_blocks:
         if not block.strip() or not block.startswith("##"):
             continue
@@ -47,7 +49,7 @@ def import_from_markdown(db: Session, workspace_id: str, import_path: Path) -> D
             rationale = None
             if "**Rationale:**" in block:
                 rationale = block.split("**Rationale:**")[1].split("**")[0].strip()
-            
+
             decision_data = decision_schema.DecisionCreate(
                 summary=summary,
                 rationale=rationale
@@ -61,7 +63,7 @@ def import_from_markdown(db: Session, workspace_id: str, import_path: Path) -> D
             )
             failed_count += 1
             continue
-    
+
     return {
         "status": "completed",
         "imported": imported_count,

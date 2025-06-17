@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+
+from ..db.database import get_db
 from ..schemas import context as context_schema
 from ..services import context_service
-from ..db.database import get_db
-from ..core.config import decode_workspace_id
 
 router = APIRouter(prefix="/workspaces/{workspace_id_b64}/context", tags=["Context"])
 
@@ -15,8 +15,7 @@ def read_product_context(workspace_id_b64: str, db: Session = Depends(get_db)):
 
 @router.put("/product", response_model=context_schema.ContextRead)
 def update_product_context(workspace_id_b64: str, update_data: context_schema.ContextUpdate, db: Session = Depends(get_db)):
-    """
-    Update the product context.
+    """Update the product context.
     Use 'content' for a full overwrite or 'patch_content' for a partial update.
     """
     instance = context_service.get_product_context(db)
@@ -30,8 +29,7 @@ def read_active_context(workspace_id_b64: str, db: Session = Depends(get_db)):
 
 @router.put("/active", response_model=context_schema.ContextRead)
 def update_active_context(workspace_id_b64: str, update_data: context_schema.ContextUpdate, db: Session = Depends(get_db)):
-    """
-    Update the active context.
+    """Update the active context.
     Use 'content' for a full overwrite or 'patch_content' for a partial update.
     """
     instance = context_service.get_active_context(db)

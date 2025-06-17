@@ -1,12 +1,12 @@
-from fastapi.testclient import TestClient
-import pytest
-from pathlib import Path
-import shutil
 import base64
+import shutil
+from pathlib import Path
 
+import pytest
 from conport.app_factory import create_app
-from conport.db.database import get_db, run_migrations_for_workspace
 from conport.db import models
+from conport.db.database import get_db, run_migrations_for_workspace
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -34,8 +34,7 @@ run_migrations_for_workspace(engine, db_path)
 
 
 def override_get_db():
-    """
-    Override the 'get_db' dependency for the tests.
+    """Override the 'get_db' dependency for the tests.
     """
     db = TestingSessionLocal()
     try:
@@ -56,14 +55,14 @@ def client():
         db.commit()
     finally:
         db.close()
-    
+
     client = TestClient(app)
     yield client
-    
+
     # Cleanup after the tests
     TestingSessionLocal.close_all()
     engine.dispose()
-    
+
     if TEST_WORKSPACE_DIR.exists():
         try:
             shutil.rmtree(TEST_WORKSPACE_DIR)
@@ -80,7 +79,7 @@ def test_update_product_context(client: TestClient):
     """Test updating product context via full overwrite and patch."""
     workspace_path = str(TEST_WORKSPACE_DIR.resolve())
     workspace_b64 = b64_encode(workspace_path)
-    
+
     # 1. Start with empty context
     response_get_initial = client.get(f"/workspaces/{workspace_b64}/context/product")
     assert response_get_initial.status_code == 200

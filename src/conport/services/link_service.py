@@ -1,8 +1,11 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import or_
 from typing import List
+
+from sqlalchemy import or_
+from sqlalchemy.orm import Session
+
 from ..db import models
 from ..schemas import link as link_schema
+
 
 def create(db: Session, link: link_schema.LinkCreate) -> models.ContextLink:
     db_link = models.ContextLink(**link.model_dump())

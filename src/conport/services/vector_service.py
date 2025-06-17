@@ -1,10 +1,11 @@
 import logging
 from pathlib import Path
-from typing import List, Dict, Any, Optional, cast
-from sentence_transformers import SentenceTransformer
+from typing import Any, Dict, List, Optional, cast
+
 import chromadb
-from chromadb.config import Settings as ChromaSettings
 from chromadb.api.client import Client
+from chromadb.config import Settings as ChromaSettings
+from sentence_transformers import SentenceTransformer
 
 from ..core import config as core_config
 
@@ -29,29 +30,29 @@ CHROMA_GC_DELAY = 0.5
 def cleanup_chroma_client(workspace_id: str) -> None:
     """Closes the ChromaDB client for a specific workspace."""
     global _chroma_clients, _collections
-    
+
     # Determine the db_path for the workspace
     db_path = str(Path(core_config.get_vector_db_path_for_workspace(workspace_id)).resolve())
     log.info(f"Cleaning up ChromaDB client for workspace: {workspace_id} (db_path: {db_path})")
-    
+
     if db_path in _chroma_clients:
         try:
             client = _chroma_clients[db_path]
-            
+
             # Reset all collections first
             for collection in client.list_collections():
                 collection_name = collection.name
                 log.info(f"Cleaning up collection: {collection_name} (type: {type(collection_name)})")
-                
+
                 # Delete all documents first
                 if collection.count() > 0:
                     collection.delete(ids=collection.get()["ids"])
                 # Then delete the collection itself
                 client.delete_collection(name=collection_name)
-            
+
             # Reset and close the client
             client.reset()
-            
+
             # Selective cache clearing - only for the current workspace
             # This is crucial after a reset because all collections are invalid
             keys_to_remove = [key for key in _collections if key.startswith(workspace_id)]
@@ -59,15 +60,15 @@ def cleanup_chroma_client(workspace_id: str) -> None:
                 del _collections[key]
                 log.debug(f"Removed collection from cache: {key}")
             log.info(f"Selectively removed {len(keys_to_remove)} collection(s) from cache for workspace: {workspace_id}")
-            
+
             import time
             time.sleep(CHROMA_CLEANUP_DELAY)  # Give Windows more time to release handles
-            
+
             # Force garbage collection to free resources
             import gc
             gc.collect()
             time.sleep(CHROMA_GC_DELAY)  # Extra wait time after garbage collection
-            
+
             del _chroma_clients[db_path]
             log.info(f"ChromaDB client successfully cleaned up for workspace: {workspace_id} (db_path: {db_path})")
         except Exception as e:
@@ -78,10 +79,10 @@ def get_chroma_client(workspace_id: str) -> Client:
     """Initialize a ChromaDB client for a workspace with correctly formatted paths."""
     global _chroma_clients
     db_path = str(Path(core_config.get_vector_db_path_for_workspace(workspace_id)).resolve())
-    
+
     if db_path not in _chroma_clients:
         log.info(f"Initializing ChromaDB client for workspace: {workspace_id} (db_path: {db_path})")
-        
+
         client = cast(Client, chromadb.PersistentClient(
             path=db_path,
             settings=ChromaSettings(
@@ -117,7 +118,7 @@ def get_collection(
 
         # If we get here, we need to create a new collection
         client = get_chroma_client(workspace_id)
-        
+
         try:
             # Try to retrieve the collection directly first
             collection = client.get_collection(name=collection_name)
@@ -126,11 +127,11 @@ def get_collection(
             # If the collection doesn't exist, create a new one
             log.info(f"Collection '{collection_name}' not found for {workspace_id}, creating: {str(e)}")
             collection = client.create_collection(name=collection_name)
-        
+
         # Update the cache only if we have a working collection
         _collections[cache_key] = collection
         return collection
-        
+
     except Exception as e:
         log.error(f"Error retrieving/creating collection for {workspace_id}: {str(e)}")
         raise
@@ -168,15 +169,15 @@ def search(
     collection = get_collection(workspace_id)
     query_embedding = generate_embedding(query_text)
     results = collection.query(query_embeddings=[query_embedding], n_results=top_k, where=filters)  # type: ignore
-    
+
     output = []
     if not results or not results.get('ids') or not results['ids'][0]:
         return []
-        
+
     ids, distances, metadatas = results['ids'][0], results.get('distances'), results.get('metadatas')
     if distances is None or metadatas is None:
         return []
-        
+
     dist_list, meta_list = distances[0], metadatas[0]
     for i in range(len(ids)):
         output.append({"id": ids[i], "distance": dist_list[i], "metadata": meta_list[i]})

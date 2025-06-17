@@ -1,6 +1,9 @@
 import datetime
 from typing import Any
+
 from pydantic import BaseModel, ConfigDict
+
+
 class CustomDataBase(BaseModel):
     category: str
     key: str

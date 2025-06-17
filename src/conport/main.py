@@ -1,36 +1,47 @@
 # FILE: src/conport/main.py
 
-import logging
-from typing import Any, Dict, List, Annotated, Optional, Callable, Union
-from pydantic import Field, ValidationError, TypeAdapter
-from fastmcp import FastMCP
-from pathlib import Path
 import datetime
 import inspect
+import logging
 from functools import wraps
-from sqlalchemy.orm import Session
+from pathlib import Path
+from typing import Annotated, Any, Callable, Dict, List, Optional, Union
+
 import dictdiffer
+from fastmcp import FastMCP
+from pydantic import Field, TypeAdapter, ValidationError
+from sqlalchemy.orm import Session
+
+from .db import models
 
 # Correct import for the ASYNC context manager
 from .db.database import get_db_session_for_workspace
-from .services import (
-    context_service, decision_service, progress_service, system_pattern_service,
-    custom_data_service, link_service, meta_service, vector_service,
-    io_service, history_service
-)
-from .schemas import (
-    context as context_schema, decision as decision_schema, progress as progress_schema,
-    system_pattern as sp_schema, custom_data as cd_schema, link as link_schema,
-    search as search_schema, batch as batch_schema, history as history_schema
-)
-from .schemas.error import MCPError
+from .schemas import batch as batch_schema
+from .schemas import context as context_schema
+from .schemas import custom_data as cd_schema
+from .schemas import decision as decision_schema
+from .schemas import link as link_schema
+from .schemas import progress as progress_schema
+from .schemas import system_pattern as sp_schema
+from .schemas.custom_data import CustomDataRead
 from .schemas.decision import DecisionRead
+from .schemas.error import MCPError
+from .schemas.history import HistoryRead
+from .schemas.link import LinkRead
 from .schemas.progress import ProgressEntryRead, ProgressEntryUpdate
 from .schemas.system_pattern import SystemPatternRead
-from .schemas.custom_data import CustomDataRead
-from .schemas.link import LinkRead
-from .schemas.history import HistoryRead
-from .db import models
+from .services import (
+    context_service,
+    custom_data_service,
+    decision_service,
+    history_service,
+    io_service,
+    link_service,
+    meta_service,
+    progress_service,
+    system_pattern_service,
+    vector_service,
+)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -49,7 +60,7 @@ def with_db_session(func: Callable[..., Any]) -> Callable[..., Any]:
         workspace_id = kwargs.get('workspace_id')
         if not workspace_id:
             return MCPError(error="workspace_id is a required argument.")
-        
+
         async with get_db_session_for_workspace(workspace_id) as db:
             kwargs['db'] = db
             return await func(*args, **kwargs)
@@ -144,7 +155,7 @@ async def update_active_context(
         return MCPError(error="Either 'content' or 'patch_content' must be provided.")
     if content is not None and patch_content is not None:
         return MCPError(error="Provide either 'content' or 'patch_content', not both.")
-        
+
     try:
         update_data = context_schema.ContextUpdate(content=content, patch_content=patch_content)
         instance = context_service.get_active_context(db)
@@ -484,7 +495,7 @@ async def get_item_history(
         history_model = models.ActiveContextHistory
     else:
         return MCPError(error="Invalid item_type for history retrieval", details={"item_type": item_type, "valid_types": ["product_context", "active_context"]})
-    
+
     query = db.query(history_model)
     if version:
         query = query.filter_by(version=version)
@@ -492,7 +503,7 @@ async def get_item_history(
         query = query.filter(history_model.timestamp < before_timestamp)
     if after_timestamp:
         query = query.filter(history_model.timestamp > after_timestamp)
-        
+
     records = query.order_by(history_model.version.desc()).limit(limit or 10).all()
     return [HistoryRead.model_validate(r) for r in records]
 
@@ -513,7 +524,7 @@ async def get_recent_activity_summary(
         "progress": [ProgressEntryRead.model_validate(p) for p in activity["progress"]],
         "system_patterns": [SystemPatternRead.model_validate(s) for s in activity["system_patterns"]]
     }
-    
+
 @mcp_server.tool()
 async def semantic_search_conport(
     workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
@@ -536,7 +547,7 @@ async def semantic_search_conport(
 
         if filter_item_types:
             and_conditions.append({"item_type": {"$in": filter_item_types}})
-        
+
         if filter_custom_data_categories and "custom_data" in (filter_item_types or []):
             and_conditions.append({"category": {"$in": filter_custom_data_categories}})
 
@@ -552,9 +563,9 @@ async def semantic_search_conport(
             # Example: {"$or": [{"tags": {"$contains": "tag1"}}, {"tags": {"$contains": "tag2"}}]}
             or_tag_conditions = [{"tags": {"$contains": tag}} for tag in filter_tags_include_any]
             and_conditions.append({"$or": or_tag_conditions})
-        
+
         filters = {"$and": and_conditions} if and_conditions else None
-        
+
         # Execute the semantic search
         search_results = vector_service.search(
             workspace_id=workspace_id,
@@ -578,8 +589,7 @@ def _to_camel_case(snake_str: str) -> str:
 async def get_conport_schema(
     workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")]
 ) -> Dict[str, Any]:
-    """
-    Retrieves the schema of all available ConPort tools.
+    """Retrieves the schema of all available ConPort tools.
     The output is a dictionary where each key is a tool name and the value is its JSON schema.
     """
     tool_functions = [f for f in mcp_server.tools.values() if f.__name__ != 'get_conport_schema']  # type: ignore[attr-defined]
@@ -587,11 +597,11 @@ async def get_conport_schema(
     final_schemas = {}
     for func in tool_functions:
         param_schema = TypeAdapter(func).json_schema()
-        
+
         param_schema['description'] = inspect.getdoc(func) or f"Arguments for {func.__name__}."
         param_schema['title'] = f"{_to_camel_case(func.__name__)}Args"
         param_schema.pop("additionalProperties", None)
-        
+
         if 'properties' in param_schema:
             for prop_name, prop_schema in param_schema['properties'].items():
                 prop_schema.pop('title', None)
@@ -599,7 +609,7 @@ async def get_conport_schema(
                 del param_schema['properties']['db'] # Remove internal 'db' arg
 
         final_schemas[func.__name__] = param_schema
-        
+
     this_func_schema = TypeAdapter(get_conport_schema).json_schema()
     this_func_schema['description'] = inspect.getdoc(get_conport_schema) or ""
     this_func_schema['title'] = "GetConportSchemaArgs"
@@ -620,23 +630,25 @@ async def diff_context_versions(
     version_b: Annotated[int, Field(description="Version number of the second item")],
     **kwargs: Any
 ) -> Union[List[Any], MCPError]:
-    """
-    Compares two versions of a ConPort item and returns the differences.
+    """Compares two versions of a ConPort item and returns the differences.
     
     This function retrieves two specific versions of a context item (product_context or active_context)
     and compares their content using dictdiffer to show what has changed between versions.
     
     Args:
+    ----
         workspace_id: Identifier for the workspace
         item_type: Type of the item ('product_context' or 'active_context')
         version_a: Version number of the first item to compare
         version_b: Version number of the second item to compare
         
     Returns:
+    -------
         List of differences found by dictdiffer, or MCPError if versions not found
+
     """
     db: Session = kwargs.pop('db')
-    
+
     # Determine which history model to use based on item_type
     history_model = None
     if item_type == "product_context":
@@ -651,7 +663,7 @@ async def diff_context_versions(
                 "valid_types": ["product_context", "active_context"]
             }
         )
-    
+
     # Retrieve version A
     version_a_record = db.query(history_model).filter_by(version=version_a).first()
     if not version_a_record:
@@ -659,7 +671,7 @@ async def diff_context_versions(
             error=f"Version {version_a} not found",
             details={"item_type": item_type, "version": version_a}
         )
-    
+
     # Retrieve version B
     version_b_record = db.query(history_model).filter_by(version=version_b).first()
     if not version_b_record:
@@ -667,12 +679,12 @@ async def diff_context_versions(
             error=f"Version {version_b} not found",
             details={"item_type": item_type, "version": version_b}
         )
-    
+
     # Extract content from both versions (type: ignore because mypy can't infer the SQLAlchemy model attributes)
     content_a = version_a_record.content  # type: ignore
     content_b = version_b_record.content  # type: ignore
-    
+
     # Perform the diff comparison
     diff_result = list(dictdiffer.diff(content_a, content_b))
-    
+
     return diff_result

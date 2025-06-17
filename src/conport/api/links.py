@@ -1,9 +1,11 @@
 from typing import List
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
+
+from ..db.database import get_db
 from ..schemas import link as link_schema
 from ..services import link_service
-from ..db.database import get_db
 
 router = APIRouter(prefix="/workspaces/{workspace_id_b64}/links", tags=["Links"])
 

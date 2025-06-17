@@ -1,9 +1,12 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import text, or_
 from typing import List, Optional
-from . import vector_service
+
+from sqlalchemy import or_, text
+from sqlalchemy.orm import Session
+
 from ..db import models
 from ..schemas import decision as decision_schema
+from . import vector_service
+
 
 # The create function now takes a workspace_id parameter
 def create(db: Session, workspace_id: str, decision: decision_schema.DecisionCreate) -> models.Decision:
@@ -11,7 +14,7 @@ def create(db: Session, workspace_id: str, decision: decision_schema.DecisionCre
     db.add(db_decision)
     db.commit()
     db.refresh(db_decision)
-    
+
     # Prepare text and metadata for vector embedding
     text = f"Decision: {db_decision.summary}\nRationale: {db_decision.rationale or ''}"
     tags = db_decision.tags

@@ -1,6 +1,9 @@
 from sqlalchemy import event, select
-from sqlalchemy.orm import Session, attributes, InstanceState
+from sqlalchemy.orm import InstanceState, Session, attributes
+
 from ..db import models
+
+
 def _add_history(target, history_model, change_source):
     db_state: InstanceState = attributes.instance_state(target)
     content_history = attributes.get_history(target, 'content')

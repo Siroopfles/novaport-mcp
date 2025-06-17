@@ -1,5 +1,8 @@
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from pydantic import BaseModel, Field
+
+
 class SemanticSearchQuery(BaseModel):
     query_text: str = Field(..., min_length=1)
     top_k: int = Field(5, ge=1, le=25)

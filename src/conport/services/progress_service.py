@@ -1,23 +1,27 @@
-from sqlalchemy.orm import Session
 from typing import List, Optional
-from . import vector_service, link_service
+
+from sqlalchemy.orm import Session
+
 from ..db import models
-from ..schemas import progress as progress_schema, link as link_schema
+from ..schemas import link as link_schema
+from ..schemas import progress as progress_schema
+from . import link_service, vector_service
+
 
 def create(db: Session, workspace_id: str, entry: progress_schema.ProgressEntryCreate, linked_item_type: Optional[str], linked_item_id: Optional[str], link_relationship_type: str) -> models.ProgressEntry:
     db_entry = models.ProgressEntry(**entry.model_dump())
     db.add(db_entry)
     db.commit()
     db.refresh(db_entry)
-    
+
     text = f"Progress {db_entry.status}: {db_entry.description}"
     metadata = {"item_type": "progress", "status": db_entry.status}
     vector_service.upsert_embedding(workspace_id, f"progress_{db_entry.id}", text, metadata)
-    
+
     if linked_item_type and linked_item_id:
         link_data = link_schema.LinkCreate(source_item_type="progress_entry", source_item_id=str(db_entry.id), target_item_type=linked_item_type, target_item_id=str(linked_item_id), relationship_type=link_relationship_type)
         link_service.create(db, link_data)
-        
+
     return db_entry
 
 def get(db: Session, entry_id: int) -> models.ProgressEntry | None:

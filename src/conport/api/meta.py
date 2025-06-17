@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from ..services import meta_service
+
 from ..db.database import get_db
+from ..services import meta_service
 
 router = APIRouter(prefix="/workspaces/{workspace_id_b64}/meta", tags=["Meta"])
 

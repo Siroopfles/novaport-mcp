@@ -1,5 +1,7 @@
-from typing import Dict, Any, Optional
-from pydantic import BaseModel, Field, model_validator
+from typing import Any, Dict, Optional
+
+from pydantic import BaseModel, Field
+
 
 class ContextBase(BaseModel):
     content: Dict[str, Any]
