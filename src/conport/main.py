@@ -325,7 +325,7 @@ async def get_custom_data(
     if key:
         items = [custom_data_service.get(db, category, key)]
     else:
-        items = custom_data_service.get_by_category(db, category)
+        items = list(custom_data_service.get_by_category(db, category))
     return [CustomDataRead.model_validate(i) for i in items if i]
 
 @mcp_server.tool()
@@ -668,9 +668,9 @@ async def diff_context_versions(
             details={"item_type": item_type, "version": version_b}
         )
     
-    # Extract content from both versions
-    content_a = version_a_record.content
-    content_b = version_b_record.content
+    # Extract content from both versions (type: ignore because mypy can't infer the SQLAlchemy model attributes)
+    content_a = version_a_record.content  # type: ignore
+    content_b = version_b_record.content  # type: ignore
     
     # Perform the diff comparison
     diff_result = list(dictdiffer.diff(content_a, content_b))
