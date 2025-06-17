@@ -82,6 +82,33 @@ To use this server in VS Code as the backend for NovaPort, configure your worksp
 1.  Ensure the `cwd` path is correct and points to the directory where you cloned `novaport-mcp`.
 2.  Your NovaPort system prompts must be updated to include `"workspace_id": "${workspaceFolder}"` in the `arguments` of every `use_mcp_tool` call. Without this, the server will not know which project's database to use.
 
+## Search Capabilities
+
+ConPort includes powerful Full-Text Search (FTS) capabilities for enhanced content discovery:
+
+### Available FTS Tools
+- `search_decisions_fts`: Full-text search across decision summaries and rationales
+- `search_custom_data_value_fts`: Full-text search within custom data values
+
+### Database Backend Options
+
+**SQLite (Default):**
+- Per-workspace SQLite databases with basic FTS support
+- Suitable for development and small to medium workspaces
+- Automatic setup, no additional configuration required
+
+**PostgreSQL (Advanced):**
+For better FTS performance and advanced search capabilities, you can configure PostgreSQL:
+
+1. Install PostgreSQL and create a database
+2. Set environment variables:
+   ```bash
+   export DATABASE_URL="postgresql://username:password@localhost/conport_db"
+   ```
+3. PostgreSQL provides superior FTS performance with advanced ranking and indexing
+
+Note: PostgreSQL configuration requires running database migrations and is recommended for production environments with large datasets.
+
 ## Development
 
 -   **Running Tests:** Use `pytest` to run the test suite.

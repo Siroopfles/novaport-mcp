@@ -35,8 +35,9 @@ from .db import models
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
 
-# Dit zorgt ervoor dat de history listeners worden geregistreerd
-_ = history_service
+# Initialiseer de history service om event listeners te registreren
+# Dit zorgt ervoor dat wijzigingen in context automatisch worden gelogd
+_history_service_initialized = history_service
 
 mcp_server = FastMCP(name="NovaPort-MCP")
 
@@ -162,7 +163,7 @@ async def delete_decision_by_id(
     """Deletes a decision by its ID."""
     db: Session = kwargs.pop('db')
     deleted = decision_service.delete(db, workspace_id, decision_id)
-    return {"status": "success", "id": decision_id} if deleted else MCPError(error=f"Decision with id {decision_id} not found", details={"id": decision_id})
+    return {"status": "success", "id": decision_id} if deleted else MCPError(error=f"Decision with ID {decision_id} not found", details={"id": decision_id})
 
 @mcp_server.tool()
 @with_db_session
@@ -224,7 +225,7 @@ async def delete_progress_by_id(
     """Deletes a progress entry by its ID."""
     db: Session = kwargs.pop('db')
     deleted = progress_service.delete(db, workspace_id, progress_id)
-    return {"status": "success", "id": progress_id} if deleted else MCPError(error=f"Progress with id {progress_id} not found", details={"id": progress_id})
+    return {"status": "success", "id": progress_id} if deleted else MCPError(error=f"Progress entry with ID {progress_id} not found", details={"id": progress_id})
 
 @mcp_server.tool()
 @with_db_session
@@ -309,7 +310,7 @@ async def delete_custom_data(
     db: Session = kwargs.pop('db')
     deleted = custom_data_service.delete(db, workspace_id, category, key)
     data_id = f"{category}/{key}"
-    return {"status": "success", "category": category, "key": key} if deleted else MCPError(error=f"Custom data with id {data_id} not found", details={"category": category, "key": key})
+    return {"status": "success", "category": category, "key": key} if deleted else MCPError(error=f"Custom data with ID {data_id} not found", details={"category": category, "key": key})
 
 @mcp_server.tool()
 @with_db_session
@@ -510,27 +511,21 @@ async def semantic_search_conport(
                 and_conditions.append({"tags": {"$contains": tag}})
 
         if filter_tags_include_any:
-            # Tenminste één van deze tags moet aanwezig zijn.
-            # Dit vereist een $or conditie genest binnen de $and_conditions.
-            # {"$or": [{"tags": {"$contains": "tag1"}}, {"tags": {"$contains": "tag2"}}]}
-            if filter_tags_include_any: # Zorg dat de lijst niet leeg is
-                or_tag_conditions = [{"tags": {"$contains": tag}} for tag in filter_tags_include_any]
-                and_conditions.append({"$or": or_tag_conditions})
+            # Tenminste één van deze tags moet aanwezig zijn
+            # Dit vereist een $or conditie genest binnen de $and_conditions
+            # Voorbeeld: {"$or": [{"tags": {"$contains": "tag1"}}, {"tags": {"$contains": "tag2"}}]}
+            or_tag_conditions = [{"tags": {"$contains": tag}} for tag in filter_tags_include_any]
+            and_conditions.append({"$or": or_tag_conditions})
         
         filters = {"$and": and_conditions} if and_conditions else None
-            
-        # Placeholder voor de daadwerkelijke vector_service.search aanroep
-        # Zorg ervoor dat vector_service correct geïmporteerd en beschikbaar is.
-        # from .services.vector_service import vector_service (voorbeeld)
-        # result = vector_service.search(workspace_id=workspace_id, query_text=query_text, top_k=top_k, filters=filters)
-        # return result
-        # Tijdelijke return voor structuurvalidatie:
-        print(f"Searching with filters: {filters}") # Voor debugging
-        # In een echte implementatie zou hier de aanroep naar vector_service.search staan
-        # Voor nu, om de flow niet te breken, returnen we een lege lijst.
-        # Dit moet vervangen worden door de daadwerkelijke zoeklogica.
-        # Controleer of vector_service.search ook MCPError kan retourneren of dat hier een try-except nodig is.
-        search_results = vector_service.search(workspace_id=workspace_id, query_text=query_text, top_k=top_k, filters=filters)
+        
+        # Voer de semantische zoekopdracht uit
+        search_results = vector_service.search(
+            workspace_id=workspace_id,
+            query_text=query_text,
+            top_k=top_k,
+            filters=filters
+        )
         return search_results
 
     except Exception as e:

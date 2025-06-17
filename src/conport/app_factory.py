@@ -9,7 +9,8 @@ import base64
 
 def create_app() -> FastAPI:
     """Factory to create the FastAPI application instance."""
-    _ = history_service
+    # Initialiseer de history service om event listeners te registreren
+    _history_service_initialized = history_service
 
     app = FastAPI(
         title=settings.PROJECT_NAME,

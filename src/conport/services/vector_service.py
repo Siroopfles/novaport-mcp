@@ -52,9 +52,13 @@ def cleanup_chroma_client(workspace_id: str):
             # Reset en sluit de client
             client.reset()
             
-            # Verwijder ALLE collection caches voor deze workspace
+            # Selectief cache clearing - alleen voor de huidige workspace
             # Dit is cruciaal na een reset omdat alle collections ongeldig zijn
-            _collections.clear()  # Verwijder alle collection caches
+            keys_to_remove = [key for key in _collections if key.startswith(workspace_id)]
+            for key in keys_to_remove:
+                del _collections[key]
+                log.debug(f"Removed collection from cache: {key}")
+            log.info(f"Selectief {len(keys_to_remove)} collection(s) verwijderd uit cache voor workspace: {workspace_id}")
             
             import time
             time.sleep(CHROMA_CLEANUP_DELAY)  # Geef Windows meer tijd om handles vrij te geven
@@ -98,8 +102,8 @@ def get_collection(workspace_id: str, collection_name: str = "conport_default") 
         # Probeer eerst uit de cache
         if cache_key in _collections:
             try:
-                # Test of de cached collection nog geldig is
-                _ = _collections[cache_key].count()
+                # Test of de cached collection nog geldig is door de count() methode aan te roepen
+                collection_count = _collections[cache_key].count()
                 return _collections[cache_key]
             except Exception:
                 # Als de collection ongeldig is, verwijder uit cache

@@ -12,6 +12,7 @@ def create(db: Session, workspace_id: str, decision: decision_schema.DecisionCre
     db.commit()
     db.refresh(db_decision)
     
+    # Bereid tekst en metadata voor vector embedding
     text = f"Decision: {db_decision.summary}\nRationale: {db_decision.rationale or ''}"
     tags = db_decision.tags
     tags_str = ", ".join(tags) if isinstance(tags, list) else ""
