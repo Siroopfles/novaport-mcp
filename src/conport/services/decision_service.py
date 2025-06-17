@@ -27,7 +27,14 @@ def create(db: Session, workspace_id: str, decision: decision_schema.DecisionCre
 def get(db: Session, decision_id: int) -> Optional[models.Decision]:
     return db.query(models.Decision).filter(models.Decision.id == decision_id).first()
 
-def get_multi(db: Session, skip: int = 0, limit: int = 100, tags_all: Optional[List[str]] = None, tags_any: Optional[List[str]] = None, since: Optional[datetime.datetime] = None) -> List[models.Decision]:
+def get_multi(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    tags_all: Optional[List[str]] = None,
+    tags_any: Optional[List[str]] = None,
+    since: Optional[datetime.datetime] = None
+) -> List[models.Decision]:
     query = db.query(models.Decision)
     if tags_all:
         for tag in tags_all:

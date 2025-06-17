@@ -28,7 +28,14 @@ def create(db: Session, workspace_id: str, entry: progress_schema.ProgressEntryC
 def get(db: Session, entry_id: int) -> models.ProgressEntry | None:
     return db.query(models.ProgressEntry).filter(models.ProgressEntry.id == entry_id).first()
 
-def get_multi(db: Session, skip: int = 0, limit: int = 100, status: Optional[str] = None, parent_id: Optional[int] = None, since: Optional[datetime.datetime] = None) -> List[models.ProgressEntry]:
+def get_multi(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    status: Optional[str] = None,
+    parent_id: Optional[int] = None,
+    since: Optional[datetime.datetime] = None
+) -> List[models.ProgressEntry]:
     query = db.query(models.ProgressEntry)
     if status:
         query = query.filter(models.ProgressEntry.status == status)

@@ -16,7 +16,9 @@ from . import (
 )
 
 
-def get_recent_activity(db: Session, limit: int = 5, since: Optional[datetime.datetime] = None) -> Dict[str, List[Any]]:
+def get_recent_activity(
+    db: Session, limit: int = 5, since: Optional[datetime.datetime] = None
+) -> Dict[str, List[Any]]:
     return {
         "decisions": decision_service.get_multi(db, limit=limit, since=since),
         "progress": progress_service.get_multi(db, limit=limit, since=since),
