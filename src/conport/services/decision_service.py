@@ -1,3 +1,4 @@
+import datetime
 from typing import List, Optional
 
 from sqlalchemy import or_, text
@@ -17,16 +18,16 @@ def create(db: Session, workspace_id: str, decision: decision_schema.DecisionCre
 
     # Prepare text and metadata for vector embedding
     text = f"Decision: {db_decision.summary}\nRationale: {db_decision.rationale or ''}"
-    tags = db_decision.tags
-    tags_str = ", ".join(tags) if isinstance(tags, list) else ""
-    metadata = {"item_type": "decision", "summary": db_decision.summary, "tags": tags_str}
+    db_tags = db_decision.tags
+    tags_list = db_tags if isinstance(db_tags, list) else []
+    metadata = {"item_type": "decision", "summary": db_decision.summary, "tags": tags_list}
     vector_service.upsert_embedding(workspace_id, f"decision_{db_decision.id}", text, metadata)
     return db_decision
 
 def get(db: Session, decision_id: int) -> Optional[models.Decision]:
     return db.query(models.Decision).filter(models.Decision.id == decision_id).first()
 
-def get_multi(db: Session, skip: int = 0, limit: int = 100, tags_all: Optional[List[str]] = None, tags_any: Optional[List[str]] = None) -> List[models.Decision]:
+def get_multi(db: Session, skip: int = 0, limit: int = 100, tags_all: Optional[List[str]] = None, tags_any: Optional[List[str]] = None, since: Optional[datetime.datetime] = None) -> List[models.Decision]:
     query = db.query(models.Decision)
     if tags_all:
         for tag in tags_all:
@@ -34,6 +35,8 @@ def get_multi(db: Session, skip: int = 0, limit: int = 100, tags_all: Optional[L
     if tags_any:
         filters = [models.Decision.tags.like(f'%"{tag}"%') for tag in tags_any]
         query = query.filter(or_(*filters))
+    if since:
+        query = query.filter(models.Decision.timestamp >= since)
     return query.order_by(models.Decision.timestamp.desc()).offset(skip).limit(limit).all()
 
 def delete(db: Session, workspace_id: str, decision_id: int) -> Optional[models.Decision]:

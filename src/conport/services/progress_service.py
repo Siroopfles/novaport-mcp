@@ -1,3 +1,4 @@
+import datetime
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
@@ -27,12 +28,14 @@ def create(db: Session, workspace_id: str, entry: progress_schema.ProgressEntryC
 def get(db: Session, entry_id: int) -> models.ProgressEntry | None:
     return db.query(models.ProgressEntry).filter(models.ProgressEntry.id == entry_id).first()
 
-def get_multi(db: Session, skip: int = 0, limit: int = 100, status: Optional[str] = None, parent_id: Optional[int] = None) -> List[models.ProgressEntry]:
+def get_multi(db: Session, skip: int = 0, limit: int = 100, status: Optional[str] = None, parent_id: Optional[int] = None, since: Optional[datetime.datetime] = None) -> List[models.ProgressEntry]:
     query = db.query(models.ProgressEntry)
     if status:
         query = query.filter(models.ProgressEntry.status == status)
     if parent_id is not None:
         query = query.filter(models.ProgressEntry.parent_id == parent_id)
+    if since:
+        query = query.filter(models.ProgressEntry.timestamp >= since)
     return query.order_by(models.ProgressEntry.timestamp.desc()).offset(skip).limit(limit).all()
 
 def update(db: Session, entry_id: int, update_data: progress_schema.ProgressEntryUpdate) -> models.ProgressEntry | None:

@@ -518,7 +518,15 @@ async def get_recent_activity_summary(
 ) -> Dict[str, Any]:
     """Provides a summary of recent ConPort activity (new/updated items)."""
     db: Session = kwargs.pop('db')
-    activity = meta_service.get_recent_activity(db, limit=limit_per_type)
+    
+    # Calculate since timestamp from input parameters
+    since: Optional[datetime.datetime] = None
+    if since_timestamp:
+        since = since_timestamp
+    elif hours_ago:
+        since = datetime.datetime.utcnow() - datetime.timedelta(hours=hours_ago)
+    
+    activity = meta_service.get_recent_activity(db, limit=limit_per_type, since=since)
     return {
         "decisions": [DecisionRead.model_validate(d) for d in activity["decisions"]],
         "progress": [ProgressEntryRead.model_validate(p) for p in activity["progress"]],

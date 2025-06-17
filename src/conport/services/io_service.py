@@ -27,7 +27,7 @@ def export_to_markdown(db: Session, export_path: Path) -> Dict[str, Any]:
                     f.write(f"**Tags:** {', '.join(d.tags)}\n\n")
                 f.write("---\n")
         files_created.append("decisions.md")
-    # Voeg hier logica toe voor het exporteren van andere entiteiten
+    # Add logic here to export other entities
     return {"status": "success", "path": str(export_path), "files_created": files_created}
 
 def import_from_markdown(db: Session, workspace_id: str, import_path: Path) -> Dict[str, Any]:
