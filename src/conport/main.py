@@ -158,11 +158,11 @@ async def delete_decision_by_id(
     workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
     decision_id: int,
     **kwargs: Any
-) -> Dict[str, Any]:
+) -> Union[Dict[str, Any], MCPError]:
     """Deletes a decision by its ID."""
     db: Session = kwargs.pop('db')
     deleted = decision_service.delete(db, workspace_id, decision_id)
-    return {"status": "success", "id": decision_id} if deleted else {"status": "not_found", "id": decision_id}
+    return {"status": "success", "id": decision_id} if deleted else MCPError(error=f"Decision with id {decision_id} not found", details={"id": decision_id})
 
 @mcp_server.tool()
 @with_db_session
@@ -220,11 +220,11 @@ async def delete_progress_by_id(
     workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
     progress_id: int,
     **kwargs: Any
-) -> Dict[str, Any]:
+) -> Union[Dict[str, Any], MCPError]:
     """Deletes a progress entry by its ID."""
     db: Session = kwargs.pop('db')
     deleted = progress_service.delete(db, workspace_id, progress_id)
-    return {"status": "success", "id": progress_id} if deleted else {"status": "not_found", "id": progress_id}
+    return {"status": "success", "id": progress_id} if deleted else MCPError(error=f"Progress with id {progress_id} not found", details={"id": progress_id})
 
 @mcp_server.tool()
 @with_db_session
@@ -304,11 +304,12 @@ async def delete_custom_data(
     category: Annotated[str, Field(description="Category of the data to delete.")],
     key: Annotated[str, Field(description="Key of the data to delete.")],
     **kwargs: Any
-) -> Dict[str, Any]:
+) -> Union[Dict[str, Any], MCPError]:
     """Deletes a specific custom data entry."""
     db: Session = kwargs.pop('db')
     deleted = custom_data_service.delete(db, workspace_id, category, key)
-    return {"status": "success"} if deleted else {"status": "not_found"}
+    data_id = f"{category}/{key}"
+    return {"status": "success", "category": category, "key": key} if deleted else MCPError(error=f"Custom data with id {data_id} not found", details={"category": category, "key": key})
 
 @mcp_server.tool()
 @with_db_session
