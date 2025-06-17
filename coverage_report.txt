@@ -1,0 +1,77 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.11, pytest-8.4.0, pluggy-1.6.0
+rootdir: /app
+configfile: pyproject.toml
+plugins: cov-6.2.1
+collected 0 items / 6 errors
+
+==================================== ERRORS ====================================
+________________ ERROR collecting tests/test_api/test_batch.py _________________
+ImportError while importing test module '/app/tests/test_api/test_batch.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/home/jules/.pyenv/versions/3.12.11/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_api/test_batch.py:5: in <module>
+    from conport.app_factory import create_app
+E   ModuleNotFoundError: No module named 'conport'
+_______________ ERROR collecting tests/test_api/test_context.py ________________
+ImportError while importing test module '/app/tests/test_api/test_context.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/home/jules/.pyenv/versions/3.12.11/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_api/test_context.py:6: in <module>
+    from conport.app_factory import create_app
+E   ModuleNotFoundError: No module named 'conport'
+______________ ERROR collecting tests/test_api/test_decisions.py _______________
+ImportError while importing test module '/app/tests/test_api/test_decisions.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/home/jules/.pyenv/versions/3.12.11/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_api/test_decisions.py:5: in <module>
+    from conport.app_factory import create_app
+E   ModuleNotFoundError: No module named 'conport'
+___________ ERROR collecting tests/test_api/test_history_extended.py ___________
+ImportError while importing test module '/app/tests/test_api/test_history_extended.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/home/jules/.pyenv/versions/3.12.11/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_api/test_history_extended.py:5: in <module>
+    from conport.app_factory import create_app
+E   ModuleNotFoundError: No module named 'conport'
+____________ ERROR collecting tests/test_api/test_meta_extended.py _____________
+ImportError while importing test module '/app/tests/test_api/test_meta_extended.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/home/jules/.pyenv/versions/3.12.11/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_api/test_meta_extended.py:5: in <module>
+    from conport.app_factory import create_app
+E   ModuleNotFoundError: No module named 'conport'
+________________ ERROR collecting tests/test_api/test_search.py ________________
+ImportError while importing test module '/app/tests/test_api/test_search.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/home/jules/.pyenv/versions/3.12.11/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_api/test_search.py:8: in <module>
+    from conport.app_factory import create_app
+E   ModuleNotFoundError: No module named 'conport'
+=========================== short test summary info ============================
+ERROR tests/test_api/test_batch.py
+ERROR tests/test_api/test_context.py
+ERROR tests/test_api/test_decisions.py
+ERROR tests/test_api/test_history_extended.py
+ERROR tests/test_api/test_meta_extended.py
+ERROR tests/test_api/test_search.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 6 errors during collection !!!!!!!!!!!!!!!!!!!!
+============================== 6 errors in 0.41s ===============================

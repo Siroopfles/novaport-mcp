@@ -2,21 +2,35 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
-import chromadb
-from chromadb.api.client import Client
-from chromadb.config import Settings as ChromaSettings
-from sentence_transformers import SentenceTransformer
-
 from ..core import config as core_config
+
+try:
+    import chromadb
+    from chromadb.api.client import Client
+    from chromadb.config import Settings as ChromaSettings
+except ImportError:
+    chromadb = None  # type: ignore
+    Client = None  # type: ignore
+    ChromaSettings = None # type: ignore
+
+try:
+    from sentence_transformers import SentenceTransformer
+except ImportError:
+    SentenceTransformer = None  # type: ignore
 
 log = logging.getLogger(__name__)
 
-_model: Optional[SentenceTransformer] = None
-_chroma_clients: Dict[str, Client] = {}
-_collections: Dict[str, chromadb.Collection] = {}
+_model: Optional[Any] = None # Using Any to avoid type errors when SentenceTransformer is None
+_chroma_clients: Dict[str, Any] = {} # Using Any to avoid type errors when Client is None
+_collections: Dict[str, Any] = {} # Using Any to avoid type errors when chromadb is None
 
-def get_embedding_model() -> SentenceTransformer:
+def get_embedding_model() -> Any:
     global _model
+    if SentenceTransformer is None:
+        raise ImportError(
+            "SentenceTransformers is not installed. "
+            "Please install it with `pip install novaport-mcp[vector-search]` to use vector search features."
+        )
     if _model is None:
         log.info(f"Loading sentence transformer model: {core_config.settings.EMBEDDING_MODEL_NAME}...")
         _model = SentenceTransformer(core_config.settings.EMBEDDING_MODEL_NAME)
@@ -27,8 +41,16 @@ def get_embedding_model() -> SentenceTransformer:
 CHROMA_CLEANUP_DELAY = 2.0
 CHROMA_GC_DELAY = 0.5
 
+def _ensure_chromadb_installed() -> None:
+    if chromadb is None or Client is None or ChromaSettings is None:
+        raise ImportError(
+            "ChromaDB is not installed. "
+            "Please install it with `pip install novaport-mcp[vector-search]` to use vector search features."
+        )
+
 def cleanup_chroma_client(workspace_id: str) -> None:
     """Closes the ChromaDB client for a specific workspace."""
+    _ensure_chromadb_installed()
     global _chroma_clients, _collections
 
     # Determine the db_path for the workspace
@@ -77,15 +99,16 @@ def cleanup_chroma_client(workspace_id: str) -> None:
 
 def get_chroma_client(workspace_id: str) -> Client:
     """Initialize a ChromaDB client for a workspace with correctly formatted paths."""
+    _ensure_chromadb_installed()
     global _chroma_clients
     db_path = str(Path(core_config.get_vector_db_path_for_workspace(workspace_id)).resolve())
 
     if db_path not in _chroma_clients:
         log.info(f"Initializing ChromaDB client for workspace: {workspace_id} (db_path: {db_path})")
 
-        client = cast(Client, chromadb.PersistentClient(
+        client = cast(Client, chromadb.PersistentClient( # type: ignore
             path=db_path,
-            settings=ChromaSettings(
+            settings=ChromaSettings( # type: ignore
                 anonymized_telemetry=False,
                 allow_reset=True
             )
@@ -94,11 +117,12 @@ def get_chroma_client(workspace_id: str) -> Client:
         log.info(f"ChromaDB client initialized at {db_path}")
     return _chroma_clients[db_path]
 
-def get_collection(
+def get_collection( # type: ignore
     workspace_id: str,
     collection_name: str = "conport_default"
-) -> chromadb.Collection:
+) -> Any: # Using Any to avoid type errors when chromadb is None
     """Retrieves a ChromaDB collection with robust error handling and cache management."""
+    _ensure_chromadb_installed()
     global _collections
     cache_key = f"{workspace_id}_{collection_name}"
 

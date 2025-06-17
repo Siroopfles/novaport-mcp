@@ -23,3 +23,9 @@ def semantic_search(workspace_id_b64: str, query: search_schema.SemanticSearchQu
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except ImportError as e:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=f"Vector search functionality is not available: {e}. "
+                   "Please install with `pip install novaport-mcp[vector-search]`."
+        )
