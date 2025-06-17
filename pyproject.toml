@@ -2,7 +2,7 @@
 name = "conport-v2"
 version = "2.0.0"
 description = "A robust, database-backed Model Context Protocol (MCP) server for managing structured project context."
-authors = ["Jouw Naam <jouw.email@example.com>"]
+authors = ["Siroopfles <siroopfles@novaport.dev>"]
 readme = "README.md"
 packages = [{include = "conport", from = "src"}]
 
