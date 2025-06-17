@@ -490,7 +490,7 @@ async def semantic_search_conport(
     filter_item_types: Annotated[Optional[List[str]], Field(None, description="Optional list of item types to filter by (e.g., ['decision', 'progress']).")] = None,
     filter_tags_include_any: Annotated[Optional[List[str]], Field(None, description="Results must match AT LEAST ONE of these tags.")] = None,
     filter_tags_include_all: Annotated[Optional[List[str]], Field(None, description="Results must match ALL of these tags.")] = None,
-    filter_custom_data_categories: Annotated[Optional[List[str]], Field(None, description="For custom_data, filter by these categories.")] = None
+    filter_custom_data_categories: Annotated[Optional[List[str]], Field(None, description="For custom_data, filter by these categories. Note: filter_custom_data_categories only applies when 'custom_data' is included in item_type. The filter uses simple category matching and may not support complex boolean logic depending on ChromaDB version.")] = None
 ) -> Union[List[Dict[str, Any]], MCPError]:
     """Performs a semantic search across ConPort data with advanced filtering."""
     try:
@@ -499,19 +499,8 @@ async def semantic_search_conport(
         if filter_item_types:
             and_conditions.append({"item_type": {"$in": filter_item_types}})
         
-        if filter_custom_data_categories:
-            # Als er specifiek op custom_data item_type wordt gefilterd, passen we de category filter toe.
-            if filter_item_types and "custom_data" in filter_item_types:
-                 and_conditions.append({"category": {"$in": filter_custom_data_categories}})
-            # Als er niet specifiek op custom_data wordt gefilterd, maar wel een categorie filter is,
-            # dan is de logica complexer. De originele code had hier een potentieel probleem.
-            # De huidige implementatie van ChromaDB's metadata filtering ($and, $or) is mogelijk niet
-            # flexibel genoeg voor zeer complexe geneste condities direct.
-            # De veiligste aanpak is om de category filter alleen toe te passen als we weten
-            # dat we met custom_data items te maken hebben.
-            # De code hieronder is een directe vertaling van de prompt, maar kan verfijnd worden.
-            elif not filter_item_types: # Als er geen item_type filter is, kan custom_data erbij zitten
-                 and_conditions.append({"category": {"$in": filter_custom_data_categories}})
+        if filter_custom_data_categories and "custom_data" in (filter_item_types or []):
+            and_conditions.append({"category": {"$in": filter_custom_data_categories}})
 
 
         if filter_tags_include_all:
