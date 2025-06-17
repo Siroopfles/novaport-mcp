@@ -1,13 +1,10 @@
-# FILE: src/conport/db/database.py
-# VERVANG DE VOLLEDIGE INHOUD VAN DIT BESTAND:
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from contextlib import asynccontextmanager
 from pathlib import Path
 import logging
 from fastapi import Depends, HTTPException, status
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Any
 import importlib.resources
 import asyncio
 
@@ -18,9 +15,9 @@ from ..core import config as core_config
 
 log = logging.getLogger(__name__)
 
-_engines = {}
-_session_locals = {}
-_workspace_locks = {}
+_engines: dict[str, Any] = {}
+_session_locals: dict[str, Any] = {}
+_workspace_locks: dict[str, Any] = {}
 
 def run_migrations_for_workspace(engine, db_path: Path):
     """Deze functie is blokkerend en zal in een thread worden uitgevoerd."""

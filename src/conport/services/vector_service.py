@@ -148,7 +148,7 @@ def upsert_embedding(
     collection = get_collection(workspace_id)
     embedding = generate_embedding(text_to_embed)
     safe_metadata = {k: v for k, v in metadata.items() if isinstance(v, (str, int, float, bool))}
-    collection.upsert(ids=[item_id], embeddings=[embedding], metadatas=[safe_metadata])
+    collection.upsert(ids=[item_id], embeddings=[embedding], metadatas=[safe_metadata])  # type: ignore
     log.info(f"Upserted embedding voor item {item_id} in workspace {workspace_id}")
 
 def delete_embedding(workspace_id: str, item_id: str) -> None:
@@ -167,7 +167,7 @@ def search(
 ) -> List[Dict[str, Any]]:
     collection = get_collection(workspace_id)
     query_embedding = generate_embedding(query_text)
-    results = collection.query(query_embeddings=[query_embedding], n_results=top_k, where=filters)
+    results = collection.query(query_embeddings=[query_embedding], n_results=top_k, where=filters)  # type: ignore
     
     output = []
     if not results or not results.get('ids') or not results['ids'][0]:
