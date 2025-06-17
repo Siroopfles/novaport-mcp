@@ -17,70 +17,70 @@ _collections: Dict[str, chromadb.Collection] = {}
 def get_embedding_model() -> SentenceTransformer:
     global _model
     if _model is None:
-        log.info(f"Laden van sentence transformer model: {core_config.settings.EMBEDDING_MODEL_NAME}...")
+        log.info(f"Loading sentence transformer model: {core_config.settings.EMBEDDING_MODEL_NAME}...")
         _model = SentenceTransformer(core_config.settings.EMBEDDING_MODEL_NAME)
-        log.info("Embedding model geladen.")
+        log.info("Embedding model loaded.")
     return _model
 
-# Constanten voor cleanup delays
+# Constants for cleanup delays
 CHROMA_CLEANUP_DELAY = 2.0
 CHROMA_GC_DELAY = 0.5
 
 def cleanup_chroma_client(workspace_id: str) -> None:
-    """Sluit de ChromaDB client voor een specifieke workspace."""
+    """Closes the ChromaDB client for a specific workspace."""
     global _chroma_clients, _collections
     
-    # Bepaal het db_path voor de workspace
+    # Determine the db_path for the workspace
     db_path = str(Path(core_config.get_vector_db_path_for_workspace(workspace_id)).resolve())
-    log.info(f"Cleaning up ChromaDB client voor workspace: {workspace_id} (db_path: {db_path})")
+    log.info(f"Cleaning up ChromaDB client for workspace: {workspace_id} (db_path: {db_path})")
     
     if db_path in _chroma_clients:
         try:
             client = _chroma_clients[db_path]
             
-            # Reset eerst alle collections
+            # Reset all collections first
             for collection in client.list_collections():
                 collection_name = collection.name
                 log.info(f"Cleaning up collection: {collection_name} (type: {type(collection_name)})")
                 
-                # Verwijder eerst alle documenten
+                # Delete all documents first
                 if collection.count() > 0:
                     collection.delete(ids=collection.get()["ids"])
-                # Verwijder dan de collectie zelf
+                # Then delete the collection itself
                 client.delete_collection(name=collection_name)
             
-            # Reset en sluit de client
+            # Reset and close the client
             client.reset()
             
-            # Selectief cache clearing - alleen voor de huidige workspace
-            # Dit is cruciaal na een reset omdat alle collections ongeldig zijn
+            # Selective cache clearing - only for the current workspace
+            # This is crucial after a reset because all collections are invalid
             keys_to_remove = [key for key in _collections if key.startswith(workspace_id)]
             for key in keys_to_remove:
                 del _collections[key]
                 log.debug(f"Removed collection from cache: {key}")
-            log.info(f"Selectief {len(keys_to_remove)} collection(s) verwijderd uit cache voor workspace: {workspace_id}")
+            log.info(f"Selectively removed {len(keys_to_remove)} collection(s) from cache for workspace: {workspace_id}")
             
             import time
-            time.sleep(CHROMA_CLEANUP_DELAY)  # Geef Windows meer tijd om handles vrij te geven
+            time.sleep(CHROMA_CLEANUP_DELAY)  # Give Windows more time to release handles
             
-            # Forceer garbage collection om resources vrij te geven
+            # Force garbage collection to free resources
             import gc
             gc.collect()
-            time.sleep(CHROMA_GC_DELAY)  # Extra wachttijd na garbage collection
+            time.sleep(CHROMA_GC_DELAY)  # Extra wait time after garbage collection
             
             del _chroma_clients[db_path]
-            log.info(f"ChromaDB client succesvol opgeruimd voor workspace: {workspace_id} (db_path: {db_path})")
+            log.info(f"ChromaDB client successfully cleaned up for workspace: {workspace_id} (db_path: {db_path})")
         except Exception as e:
-            log.error(f"Fout bij opruimen ChromaDB client voor {workspace_id} (db_path: {db_path}): {e}")
-            raise  # Propagate de error zodat tests falen bij cleanup problemen
+            log.error(f"Error cleaning up ChromaDB client for {workspace_id} (db_path: {db_path}): {e}")
+            raise  # Propagate the error so tests fail on cleanup issues
 
 def get_chroma_client(workspace_id: str) -> Client:
-    """Initialize een ChromaDB client voor een workspace met correct geformatteerde paden."""
+    """Initialize a ChromaDB client for a workspace with correctly formatted paths."""
     global _chroma_clients
     db_path = str(Path(core_config.get_vector_db_path_for_workspace(workspace_id)).resolve())
     
     if db_path not in _chroma_clients:
-        log.info(f"Initialiseren van ChromaDB client voor workspace: {workspace_id} (db_path: {db_path})")
+        log.info(f"Initializing ChromaDB client for workspace: {workspace_id} (db_path: {db_path})")
         
         client = cast(Client, chromadb.PersistentClient(
             path=db_path,
@@ -90,49 +90,49 @@ def get_chroma_client(workspace_id: str) -> Client:
             )
         ))
         _chroma_clients[db_path] = client
-        log.info(f"ChromaDB client geïnitialiseerd op {db_path}")
+        log.info(f"ChromaDB client initialized at {db_path}")
     return _chroma_clients[db_path]
 
 def get_collection(
     workspace_id: str,
     collection_name: str = "conport_default"
 ) -> chromadb.Collection:
-    """Haalt een ChromaDB collection op, met robuuste error handling en cache management."""
+    """Retrieves a ChromaDB collection with robust error handling and cache management."""
     global _collections
     cache_key = f"{workspace_id}_{collection_name}"
 
     try:
-        # Probeer eerst uit de cache
+        # Try from cache first
         if cache_key in _collections:
             try:
-                # Test of de cached collection nog geldig is door de count() methode aan te roepen
+                # Test if the cached collection is still valid by calling the count() method
                 collection_count = _collections[cache_key].count()
                 return _collections[cache_key]
             except Exception:
-                # Als de collection ongeldig is, verwijder uit cache
+                # If the collection is invalid, remove from cache
                 log.warning(
-                    f"Ongeldige collection in cache voor {cache_key}, wordt opnieuw aangemaakt"
+                    f"Invalid collection in cache for {cache_key}, will be recreated"
                 )
                 _collections.pop(cache_key, None)
 
-        # Als we hier komen, moeten we een nieuwe collection maken
+        # If we get here, we need to create a new collection
         client = get_chroma_client(workspace_id)
         
         try:
-            # Probeer eerst de collection direct op te halen
+            # Try to retrieve the collection directly first
             collection = client.get_collection(name=collection_name)
-            log.info(f"Bestaande collection '{collection_name}' gevonden voor {workspace_id}")
+            log.info(f"Existing collection '{collection_name}' found for {workspace_id}")
         except Exception as e:
-            # Als de collection niet bestaat, maak een nieuwe aan
-            log.info(f"Collection '{collection_name}' niet gevonden voor {workspace_id}, wordt aangemaakt: {str(e)}")
+            # If the collection doesn't exist, create a new one
+            log.info(f"Collection '{collection_name}' not found for {workspace_id}, creating: {str(e)}")
             collection = client.create_collection(name=collection_name)
         
-        # Update de cache alleen als we een werkende collection hebben
+        # Update the cache only if we have a working collection
         _collections[cache_key] = collection
         return collection
         
     except Exception as e:
-        log.error(f"Fout bij ophalen/aanmaken collection voor {workspace_id}: {str(e)}")
+        log.error(f"Error retrieving/creating collection for {workspace_id}: {str(e)}")
         raise
 
 def generate_embedding(text: str) -> List[float]:
@@ -149,15 +149,15 @@ def upsert_embedding(
     embedding = generate_embedding(text_to_embed)
     safe_metadata = {k: v for k, v in metadata.items() if isinstance(v, (str, int, float, bool))}
     collection.upsert(ids=[item_id], embeddings=[embedding], metadatas=[safe_metadata])  # type: ignore
-    log.info(f"Upserted embedding voor item {item_id} in workspace {workspace_id}")
+    log.info(f"Upserted embedding for item {item_id} in workspace {workspace_id}")
 
 def delete_embedding(workspace_id: str, item_id: str) -> None:
     collection = get_collection(workspace_id)
     try:
         collection.delete(ids=[item_id])
-        log.info(f"Deleted embedding voor item {item_id} in workspace {workspace_id}")
+        log.info(f"Deleted embedding for item {item_id} in workspace {workspace_id}")
     except Exception as e:
-        log.warning(f"Kon embedding voor {item_id} niet verwijderen in workspace {workspace_id} (bestond mogelijk niet): {e}")
+        log.warning(f"Could not delete embedding for {item_id} in workspace {workspace_id} (may not have existed): {e}")
 
 def search(
     workspace_id: str,

@@ -9,7 +9,7 @@ import base64
 
 def create_app() -> FastAPI:
     """Factory to create the FastAPI application instance."""
-    # Initialiseer de history service om event listeners te registreren
+    # Initialize the history service to register event listeners
     _history_service_initialized = history_service
 
     app = FastAPI(
@@ -25,7 +25,7 @@ def create_app() -> FastAPI:
         return {"status": "ok", "project_name": settings.PROJECT_NAME}
 
     # Include all API routers
-    # Deze routers verwachten nu een workspace_id in hun pad
+    # These routers now expect a workspace_id in their path
     app.include_router(context.router)
     app.include_router(decisions.router)
     app.include_router(progress.router)

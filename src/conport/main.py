@@ -11,7 +11,7 @@ from functools import wraps
 from sqlalchemy.orm import Session
 import dictdiffer
 
-# Correcte import voor de ASYNCHRONE context manager
+# Correct import for the ASYNC context manager
 from .db.database import get_db_session_for_workspace
 from .services import (
     context_service, decision_service, progress_service, system_pattern_service,
@@ -35,13 +35,13 @@ from .db import models
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
 
-# Initialiseer de history service om event listeners te registreren
-# Dit zorgt ervoor dat wijzigingen in context automatisch worden gelogd
+# Initialize the history service to register event listeners
+# This ensures that context changes are automatically logged
 _history_service_initialized = history_service
 
 mcp_server = FastMCP(name="NovaPort-MCP")
 
-# --- Decorator voor DB Sessie ---
+# --- Decorator for DB Session ---
 def with_db_session(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to provide a workspace-specific DB session."""
     @wraps(func)
@@ -55,7 +55,7 @@ def with_db_session(func: Callable[..., Any]) -> Callable[..., Any]:
             return await func(*args, **kwargs)
     return wrapper
 
-# --- Tool Definities (Workspace-Aware, Async, Refactored) ---
+# --- Tool Definitions (Workspace-Aware, Async, Refactored) ---
 
 @mcp_server.tool()
 @with_db_session
@@ -454,7 +454,7 @@ async def batch_log_items(
     db: Session = kwargs.pop('db')
     try:
         result = meta_service.batch_log_items(db, workspace_id, item_type, items)
-        # Als er errors zijn, verpak ze in de MCPError structuur met details
+        # If there are errors, wrap them in the MCPError structure with details
         if result["errors"]:
             return MCPError(
                 error="Some items failed validation",
@@ -542,20 +542,20 @@ async def semantic_search_conport(
 
 
         if filter_tags_include_all:
-            # Elk tag moet aanwezig zijn. Dit vertaalt naar meerdere $contains condities binnen de $and_conditions.
+            # Each tag must be present. This translates to multiple $contains conditions within the $and_conditions.
             for tag in filter_tags_include_all:
                 and_conditions.append({"tags": {"$contains": tag}})
 
         if filter_tags_include_any:
-            # Tenminste één van deze tags moet aanwezig zijn
-            # Dit vereist een $or conditie genest binnen de $and_conditions
-            # Voorbeeld: {"$or": [{"tags": {"$contains": "tag1"}}, {"tags": {"$contains": "tag2"}}]}
+            # At least one of these tags must be present
+            # This requires a $or condition nested within the $and_conditions
+            # Example: {"$or": [{"tags": {"$contains": "tag1"}}, {"tags": {"$contains": "tag2"}}]}
             or_tag_conditions = [{"tags": {"$contains": tag}} for tag in filter_tags_include_any]
             and_conditions.append({"$or": or_tag_conditions})
         
         filters = {"$and": and_conditions} if and_conditions else None
         
-        # Voer de semantische zoekopdracht uit
+        # Execute the semantic search
         search_results = vector_service.search(
             workspace_id=workspace_id,
             query_text=query_text,
@@ -565,7 +565,7 @@ async def semantic_search_conport(
         return search_results
 
     except Exception as e:
-        # Log de fout hier eventueel
+        # Log the error here if needed
         return MCPError(error="Semantic search failed", details=str(e))
 
 

@@ -1,4 +1,4 @@
-"""Gemeenschappelijke test utilities."""
+"""Common test utilities."""
 import shutil
 from pathlib import Path
 import time
@@ -6,12 +6,12 @@ import warnings
 
 def robust_rmtree(path: str | Path, max_retries: int = 3, base_delay: float = 1.0):
     """
-    Verwijder een directory met retry mechanisme en exponentiële backoff.
+    Remove a directory with retry mechanism and exponential backoff.
     
     Args:
-        path: Het pad om te verwijderen
-        max_retries: Maximum aantal pogingen (default: 3)
-        base_delay: Basis wachttijd tussen pogingen (default: 1.0)
+        path: The path to remove
+        max_retries: Maximum number of attempts (default: 3)
+        base_delay: Base wait time between attempts (default: 1.0)
     """
     path = Path(path)
     if not path.exists():
@@ -23,9 +23,9 @@ def robust_rmtree(path: str | Path, max_retries: int = 3, base_delay: float = 1.
             break
         except PermissionError:
             if attempt < max_retries - 1:
-                retry_delay = base_delay * (2 ** attempt)  # Exponentiële backoff
+                retry_delay = base_delay * (2 ** attempt)  # Exponential backoff
                 time.sleep(retry_delay)
             else:
                 warnings.warn(
-                    f"Kon directory niet verwijderen na {max_retries} pogingen: {path}"
+                    f"Could not remove directory after {max_retries} attempts: {path}"
                 )

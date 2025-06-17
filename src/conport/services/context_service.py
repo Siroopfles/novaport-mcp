@@ -9,7 +9,7 @@ def _get_or_create(
     db: Session,
     model: Type[ContextModel]
 ) -> ContextModel:
-    """Helper functie om een context record op te halen of aan te maken met standaard content."""
+    """Helper function to retrieve or create a context record with default content."""
     instance = db.query(model).filter_by(id=1).first()
     if not instance:
         instance = model(id=1, content={})
@@ -19,11 +19,11 @@ def _get_or_create(
     return instance
 
 def get_product_context(db: Session) -> models.ProductContext:
-    """Haalt de product context op, maakt deze aan als deze nog niet bestaat."""
+    """Retrieves the product context, creates it if it doesn't exist yet."""
     return _get_or_create(db, models.ProductContext)
 
 def get_active_context(db: Session) -> models.ActiveContext:
-    """Haalt de actieve context op, maakt deze aan als deze nog niet bestaat."""
+    """Retrieves the active context, creates it if it doesn't exist yet."""
     return _get_or_create(db, models.ActiveContext)
 
 def update_context(
@@ -31,7 +31,7 @@ def update_context(
     instance: Union[models.ProductContext, models.ActiveContext],
     update_data: context_schema.ContextUpdate
 ) -> Union[models.ProductContext, models.ActiveContext]:
-    """Werkt context bij met volledige content of patch-gebaseerde updates."""
+    """Updates context with full content or patch-based updates."""
     current_content = cast(Dict[str, Any], instance.content) or {}
     new_content = current_content.copy()
 

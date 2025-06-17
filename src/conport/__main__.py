@@ -24,7 +24,7 @@ def main():
     
     args = parser.parse_args()
     
-    # Default naar start commando als geen commando gegeven
+    # Default to start command if no command given
     if args.command is None or args.command == "start":
         print("Starting NovaPort-MCP server in STDIO mode...")
         print("This server is multi-workspace capable.")

@@ -20,7 +20,7 @@ def batch_log_items(
     item_type: str,
     items: List[Dict[str, Any]]
 ) -> Dict[str, Any]:
-    # Definieer de service functie, het Pydantic schema, en de correcte keyword argument naam
+    # Define the service function, the Pydantic schema, and the correct keyword argument name
     service_map = {
         "decision": (decision_service.create, DecisionCreate, "decision"),
         "progress": (progress_service.create, ProgressEntryCreate, "entry"),
@@ -45,7 +45,7 @@ def batch_log_items(
                 param_name: validated_item
             }
             
-            # Progress heeft een speciale signatuur die we moeten respecteren
+            # Progress has a special signature that we must respect
             if item_type == "progress":
                 kwargs['linked_item_type'] = None
                 kwargs['linked_item_id'] = None

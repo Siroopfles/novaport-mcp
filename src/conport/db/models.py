@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, declarative_base, DeclarativeBase
 
-# Definieer de Base HIER, binnen de models.py file.
+# Define the Base HERE, within the models.py file.
 Base: type[DeclarativeBase] = declarative_base()
 
 # Core Data Models

@@ -3,6 +3,6 @@ from pydantic import BaseModel
 
 
 class MCPError(BaseModel):
-    """Pydantic model voor MCP fouten."""
+    """Pydantic model for MCP errors."""
     error: str
     details: Optional[Any] = None

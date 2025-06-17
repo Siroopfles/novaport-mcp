@@ -5,14 +5,14 @@ from . import vector_service
 from ..db import models
 from ..schemas import decision as decision_schema
 
-# De create functie neemt nu een workspace_id parameter
+# The create function now takes a workspace_id parameter
 def create(db: Session, workspace_id: str, decision: decision_schema.DecisionCreate) -> models.Decision:
     db_decision = models.Decision(**decision.model_dump())
     db.add(db_decision)
     db.commit()
     db.refresh(db_decision)
     
-    # Bereid tekst en metadata voor vector embedding
+    # Prepare text and metadata for vector embedding
     text = f"Decision: {db_decision.summary}\nRationale: {db_decision.rationale or ''}"
     tags = db_decision.tags
     tags_str = ", ".join(tags) if isinstance(tags, list) else ""
@@ -42,13 +42,13 @@ def delete(db: Session, workspace_id: str, decision_id: int) -> Optional[models.
     return db_decision
 
 def search_fts(db: Session, query: str, limit: int = 10) -> List[models.Decision]:
-    # Dit deel is afhankelijk van of je FTS tabellen hebt in je migraties.
-    # Als dit een fout geeft, moet de FTS setup in Alembic worden nagekeken.
-    # Voor nu gaan we ervan uit dat de tabel 'decisions_fts' bestaat.
+    # This part depends on whether you have FTS tables in your migrations.
+    # If this gives an error, the FTS setup in Alembic needs to be checked.
+    # For now we assume that the 'decisions_fts' table exists.
     try:
         stmt = text('SELECT d.* FROM decisions d JOIN decisions_fts fts ON d.id = fts.rowid WHERE fts.decisions_fts MATCH :query ORDER BY rank LIMIT :limit')
         result_proxy = db.execute(stmt, {"query": query, "limit": limit})
         return [models.Decision(**row._mapping) for row in result_proxy]
     except Exception:
-        # Fallback als FTS niet is ingesteld
+        # Fallback if FTS is not set up
         return db.query(models.Decision).filter(models.Decision.summary.contains(query)).limit(limit).all()

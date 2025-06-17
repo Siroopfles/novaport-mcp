@@ -3,7 +3,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
 
-# Importeer de Base en de settings uit onze applicatie
+# Import the Base and settings from our application
 from conport.db.models import Base
 from conport.core.config import settings
 
@@ -12,7 +12,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Stel de URL in voor de CLI
+# Set the URL for the CLI
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 target_metadata = Base.metadata
@@ -31,21 +31,21 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
     
-    # Krijg de verbinding die is doorgegeven door de applicatie.
-    # Dit zal een Connection object zijn als het vanuit de app wordt gedraaid,
-    # en None als het vanuit de Alembic CLI wordt gedraaid.
+    # Get the connection that was passed by the application.
+    # This will be a Connection object if run from the app,
+    # and None if run from the Alembic CLI.
     connectable = context.config.attributes.get("connection", None)
 
     if connectable is None:
-        # SCENARIO: Gedraaid vanaf de command line (e.g., "poetry run alembic upgrade head")
-        # Maak een nieuwe engine aan vanuit alembic.ini
+        # SCENARIO: Run from command line (e.g., "poetry run alembic upgrade head")
+        # Create a new engine from alembic.ini
         connectable = engine_from_config(
             config.get_section(config.config_ini_section, {}),
             prefix="sqlalchemy.",
             poolclass=pool.NullPool,
         )
 
-        # Omdat we een engine hebben, moeten we de verbinding zelf beheren.
+        # Since we have an engine, we need to manage the connection ourselves.
         with connectable.connect() as connection:
             context.configure(
                 connection=connection,
@@ -55,17 +55,17 @@ def run_migrations_online() -> None:
             with context.begin_transaction():
                 context.run_migrations()
     else:
-        # SCENARIO: Gedraaid vanuit de applicatie.
-        # 'connectable' IS AL EEN Connection object.
-        # De transactie wordt al beheerd door `engine.begin()` in database.py.
-        # We hoeven alleen maar Alembic te configureren om deze bestaande verbinding te gebruiken.
+        # SCENARIO: Run from the application.
+        # 'connectable' IS ALREADY A Connection object.
+        # The transaction is already managed by `engine.begin()` in database.py.
+        # We only need to configure Alembic to use this existing connection.
         context.configure(
             connection=connectable,
             target_metadata=target_metadata
         )
         
-        # De transactie is al gestart, maar Alembic's context manager
-        # zal de bestaande transactie "joinen" in plaats van een nieuwe te starten.
+        # The transaction is already started, but Alembic's context manager
+        # will "join" the existing transaction instead of starting a new one.
         with context.begin_transaction():
             context.run_migrations()
 
