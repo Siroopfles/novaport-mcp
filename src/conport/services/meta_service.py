@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Callable
 from pydantic import ValidationError
 from . import decision_service, progress_service, system_pattern_service, custom_data_service
 from ..schemas.decision import DecisionCreate
@@ -31,6 +31,7 @@ def batch_log_items(
     if item_type not in service_map:
         raise ValueError(f"Invalid item_type for batch operation: {item_type}")
         
+    service_func: Callable[..., Any]
     service_func, schema, param_name = service_map[item_type]
     success_count, errors = 0, []
     
