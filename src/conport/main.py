@@ -42,10 +42,10 @@ _history_service_initialized = history_service
 mcp_server = FastMCP(name="NovaPort-MCP")
 
 # --- Decorator voor DB Sessie ---
-def with_db_session(func: Callable) -> Callable:
+def with_db_session(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to provide a workspace-specific DB session."""
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         workspace_id = kwargs.get('workspace_id')
         if not workspace_id:
             return MCPError(error="workspace_id is a required argument.")
@@ -70,9 +70,24 @@ async def get_product_context(
 @mcp_server.tool()
 @with_db_session
 async def update_product_context(
-    workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
-    content: Annotated[Optional[Dict[str, Any]], Field(None, description="The full new context content as a dictionary. Overwrites existing.")] = None,
-    patch_content: Annotated[Optional[Dict[str, Any]], Field(None, description="A dictionary of changes to apply to the existing context (add/update keys).")] = None,
+    workspace_id: Annotated[
+        str,
+        Field(description="Identifier for the workspace (e.g., absolute path)")
+    ],
+    content: Annotated[
+        Optional[Dict[str, Any]],
+        Field(
+            None,
+            description="The full new context content as a dictionary. Overwrites existing."
+        )
+    ] = None,
+    patch_content: Annotated[
+        Optional[Dict[str, Any]],
+        Field(
+            None,
+            description="A dictionary of changes to apply to the existing context (add/update keys)."
+        )
+    ] = None,
     **kwargs: Any
 ) -> Union[Any, MCPError]:
     """Updates the product context. Accepts full `content` (object) or `patch_content` (object) for partial updates (use `__DELETE__` as a value in patch to remove a key)."""
@@ -103,9 +118,24 @@ async def get_active_context(
 @mcp_server.tool()
 @with_db_session
 async def update_active_context(
-    workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
-    content: Annotated[Optional[Dict[str, Any]], Field(None, description="The full new context content as a dictionary. Overwrites existing.")] = None,
-    patch_content: Annotated[Optional[Dict[str, Any]], Field(None, description="A dictionary of changes to apply to the existing context (add/update keys).")] = None,
+    workspace_id: Annotated[
+        str,
+        Field(description="Identifier for the workspace (e.g., absolute path)")
+    ],
+    content: Annotated[
+        Optional[Dict[str, Any]],
+        Field(
+            None,
+            description="The full new context content as a dictionary. Overwrites existing."
+        )
+    ] = None,
+    patch_content: Annotated[
+        Optional[Dict[str, Any]],
+        Field(
+            None,
+            description="A dictionary of changes to apply to the existing context (add/update keys)."
+        )
+    ] = None,
     **kwargs: Any
 ) -> Union[Any, MCPError]:
     """Updates the active context. Accepts full `content` (object) or `patch_content` (object) for partial updates (use `__DELETE__` as a value in patch to remove a key)."""
@@ -492,7 +522,13 @@ async def semantic_search_conport(
     filter_item_types: Annotated[Optional[List[str]], Field(None, description="Optional list of item types to filter by (e.g., ['decision', 'progress']).")] = None,
     filter_tags_include_any: Annotated[Optional[List[str]], Field(None, description="Results must match AT LEAST ONE of these tags.")] = None,
     filter_tags_include_all: Annotated[Optional[List[str]], Field(None, description="Results must match ALL of these tags.")] = None,
-    filter_custom_data_categories: Annotated[Optional[List[str]], Field(None, description="For custom_data, filter by these categories. Note: filter_custom_data_categories only applies when 'custom_data' is included in item_type. The filter uses simple category matching and may not support complex boolean logic depending on ChromaDB version.")] = None
+    filter_custom_data_categories: Annotated[
+        Optional[List[str]],
+        Field(
+            None,
+            description="For custom_data, filter by these categories. Note: filter_custom_data_categories only applies when 'custom_data' is included in item_type. The filter uses simple category matching and may not support complex boolean logic depending on ChromaDB version."
+        )
+    ] = None
 ) -> Union[List[Dict[str, Any]], MCPError]:
     """Performs a semantic search across ConPort data with advanced filtering."""
     try:

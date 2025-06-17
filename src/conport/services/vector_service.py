@@ -26,7 +26,7 @@ def get_embedding_model() -> SentenceTransformer:
 CHROMA_CLEANUP_DELAY = 2.0
 CHROMA_GC_DELAY = 0.5
 
-def cleanup_chroma_client(workspace_id: str):
+def cleanup_chroma_client(workspace_id: str) -> None:
     """Sluit de ChromaDB client voor een specifieke workspace."""
     global _chroma_clients, _collections
     
@@ -93,7 +93,10 @@ def get_chroma_client(workspace_id: str) -> Client:
         log.info(f"ChromaDB client geïnitialiseerd op {db_path}")
     return _chroma_clients[db_path]
 
-def get_collection(workspace_id: str, collection_name: str = "conport_default") -> chromadb.Collection:
+def get_collection(
+    workspace_id: str,
+    collection_name: str = "conport_default"
+) -> chromadb.Collection:
     """Haalt een ChromaDB collection op, met robuuste error handling en cache management."""
     global _collections
     cache_key = f"{workspace_id}_{collection_name}"
@@ -107,7 +110,9 @@ def get_collection(workspace_id: str, collection_name: str = "conport_default") 
                 return _collections[cache_key]
             except Exception:
                 # Als de collection ongeldig is, verwijder uit cache
-                log.warning(f"Ongeldige collection in cache voor {cache_key}, wordt opnieuw aangemaakt")
+                log.warning(
+                    f"Ongeldige collection in cache voor {cache_key}, wordt opnieuw aangemaakt"
+                )
                 _collections.pop(cache_key, None)
 
         # Als we hier komen, moeten we een nieuwe collection maken
@@ -134,14 +139,19 @@ def generate_embedding(text: str) -> List[float]:
     model = get_embedding_model()
     return model.encode(text, convert_to_tensor=False).tolist()
 
-def upsert_embedding(workspace_id: str, item_id: str, text_to_embed: str, metadata: Dict[str, Any]):
+def upsert_embedding(
+    workspace_id: str,
+    item_id: str,
+    text_to_embed: str,
+    metadata: Dict[str, Any]
+) -> None:
     collection = get_collection(workspace_id)
     embedding = generate_embedding(text_to_embed)
     safe_metadata = {k: v for k, v in metadata.items() if isinstance(v, (str, int, float, bool))}
     collection.upsert(ids=[item_id], embeddings=[embedding], metadatas=[safe_metadata])
     log.info(f"Upserted embedding voor item {item_id} in workspace {workspace_id}")
 
-def delete_embedding(workspace_id: str, item_id: str):
+def delete_embedding(workspace_id: str, item_id: str) -> None:
     collection = get_collection(workspace_id)
     try:
         collection.delete(ids=[item_id])
@@ -149,7 +159,12 @@ def delete_embedding(workspace_id: str, item_id: str):
     except Exception as e:
         log.warning(f"Kon embedding voor {item_id} niet verwijderen in workspace {workspace_id} (bestond mogelijk niet): {e}")
 
-def search(workspace_id: str, query_text: str, top_k: int, filters: Optional[Dict] = None) -> List[Dict[str, Any]]:
+def search(
+    workspace_id: str,
+    query_text: str,
+    top_k: int,
+    filters: Optional[Dict[str, Any]] = None
+) -> List[Dict[str, Any]]:
     collection = get_collection(workspace_id)
     query_embedding = generate_embedding(query_text)
     results = collection.query(query_embeddings=[query_embedding], n_results=top_k, where=filters)

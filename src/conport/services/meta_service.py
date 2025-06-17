@@ -14,7 +14,12 @@ def get_recent_activity(db: Session, limit: int = 5) -> Dict[str, List[Any]]:
         "system_patterns": system_pattern_service.get_multi(db, limit=limit)
     }
 
-def batch_log_items(db: Session, workspace_id: str, item_type: str, items: List[Dict[str, Any]]) -> Dict[str, Any]:
+def batch_log_items(
+    db: Session,
+    workspace_id: str,
+    item_type: str,
+    items: List[Dict[str, Any]]
+) -> Dict[str, Any]:
     # Definieer de service functie, het Pydantic schema, en de correcte keyword argument naam
     service_map = {
         "decision": (decision_service.create, DecisionCreate, "decision"),

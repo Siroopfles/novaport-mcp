@@ -20,7 +20,7 @@ def create(db: Session, workspace_id: str, decision: decision_schema.DecisionCre
     vector_service.upsert_embedding(workspace_id, f"decision_{db_decision.id}", text, metadata)
     return db_decision
 
-def get(db: Session, decision_id: int) -> models.Decision | None:
+def get(db: Session, decision_id: int) -> Optional[models.Decision]:
     return db.query(models.Decision).filter(models.Decision.id == decision_id).first()
 
 def get_multi(db: Session, skip: int = 0, limit: int = 100, tags_all: Optional[List[str]] = None, tags_any: Optional[List[str]] = None) -> List[models.Decision]:
@@ -33,7 +33,7 @@ def get_multi(db: Session, skip: int = 0, limit: int = 100, tags_all: Optional[L
         query = query.filter(or_(*filters))
     return query.order_by(models.Decision.timestamp.desc()).offset(skip).limit(limit).all()
 
-def delete(db: Session, workspace_id: str, decision_id: int) -> models.Decision | None:
+def delete(db: Session, workspace_id: str, decision_id: int) -> Optional[models.Decision]:
     db_decision = get(db, decision_id)
     if db_decision:
         vector_service.delete_embedding(workspace_id, f"decision_{decision_id}")
