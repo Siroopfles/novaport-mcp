@@ -1,7 +1,10 @@
+import logging
 from pathlib import Path
 from sqlalchemy.orm import Session
 from . import decision_service
 from ..schemas import decision as decision_schema
+
+logger = logging.getLogger(__name__)
 
 def export_to_markdown(db: Session, export_path: Path):
     export_path.mkdir(parents=True, exist_ok=True)
@@ -27,7 +30,8 @@ def import_from_markdown(db: Session, workspace_id: str, import_path: Path):
     with open(import_path / "decisions.md", "r", encoding="utf-8") as f:
         content = f.read()
     decision_blocks = content.split('---')
-    count = 0
+    imported_count = 0
+    failed_count = 0
     for block in decision_blocks:
         if not block.strip() or not block.startswith("##"): continue
         try:
@@ -35,7 +39,14 @@ def import_from_markdown(db: Session, workspace_id: str, import_path: Path):
             rationale = block.split("**Rationale:**")[1].split("**")[0].strip() if "**Rationale:**" in block else None
             decision_data = decision_schema.DecisionCreate(summary=summary, rationale=rationale)
             decision_service.create(db, workspace_id, decision_data) # Geef workspace_id door
-            count += 1
-        except Exception:
+            imported_count += 1
+        except Exception as e:
+            logger.warning(f"Failed to parse decision block starting with: {block[:50]}... Error: {str(e)}")
+            failed_count += 1
             continue
-    return {"status": "success", "decisions_imported": count}
+    return {
+        "status": "completed",
+        "imported": imported_count,
+        "failed": failed_count,
+        "message": f"Successfully imported {imported_count} decisions, {failed_count} failed to parse"
+    }
