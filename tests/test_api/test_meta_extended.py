@@ -383,8 +383,9 @@ class TestTimestampFiltering:
 
     def test_get_recent_activity_with_since_parameter(self, db_session):
         """Test get_recent_activity with since datetime parameter."""
-        from conport.services import meta_service
         import datetime
+
+        from conport.services import meta_service
 
         # Create test data at different times
         now = datetime.datetime.utcnow()
@@ -398,7 +399,7 @@ class TestTimestampFiltering:
             timestamp=four_hours_ago
         )
         recent_decision = models.Decision(
-            summary="Recent decision", 
+            summary="Recent decision",
             rationale="This is recent",
             timestamp=now
         )
@@ -424,7 +425,7 @@ class TestTimestampFiltering:
         # Create test data
         now = datetime.datetime.utcnow()
         three_hours_ago = now - datetime.timedelta(hours=3)
-        
+
         old_decision = models.Decision(
             summary="Old decision for endpoint test",
             timestamp=three_hours_ago
@@ -445,10 +446,10 @@ class TestTimestampFiltering:
             f"/workspaces/{workspace_b64}/meta/recent-activity",
             params={"since": since_param}
         )
-        
+
         assert response.status_code == 200
         activity_data = response.json()
-        
+
         assert len(activity_data["decisions"]) == 1
         assert activity_data["decisions"][0]["summary"] == "Recent decision for endpoint test"
 
@@ -462,14 +463,14 @@ class TestTimestampFiltering:
         # Create test data
         now = datetime.datetime.utcnow()
         five_hours_ago = now - datetime.timedelta(hours=5)
-        
+
         old_progress = models.ProgressEntry(
             status="DONE",
             description="Old progress entry",
             timestamp=five_hours_ago
         )
         recent_progress = models.ProgressEntry(
-            status="IN_PROGRESS", 
+            status="IN_PROGRESS",
             description="Recent progress entry",
             timestamp=now
         )
@@ -482,10 +483,10 @@ class TestTimestampFiltering:
             f"/workspaces/{workspace_b64}/meta/recent-activity",
             params={"hours_ago": 3}
         )
-        
+
         assert response.status_code == 200
         activity_data = response.json()
-        
+
         # Should only get the recent progress entry
         assert len(activity_data["progress"]) == 1
         assert activity_data["progress"][0]["description"] == "Recent progress entry"
@@ -514,7 +515,7 @@ class TestTimestampFiltering:
             f"/workspaces/{workspace_b64}/meta/recent-activity",
             params={"since": future_time.isoformat()}
         )
-        
+
         assert response.status_code == 200
         activity_data = response.json()
         # Future timestamp should return empty results
@@ -527,7 +528,7 @@ class TestTimestampFiltering:
             f"/workspaces/{workspace_b64}/meta/recent-activity",
             params={"hours_ago": 999999}
         )
-        
+
         assert response.status_code == 200
         activity_data = response.json()
         # Should return all items
@@ -559,7 +560,7 @@ class TestTimestampFiltering:
             timestamp=six_hours_ago
         )
         pattern2 = models.SystemPattern(
-            name="Recent Pattern", 
+            name="Recent Pattern",
             description="Created 2 hours ago",
             timestamp=two_hours_ago
         )
@@ -581,10 +582,10 @@ class TestTimestampFiltering:
                 "hours_ago": 1  # This would normally only get the very recent one
             }
         )
-        
+
         assert response.status_code == 200
         activity_data = response.json()
-        
+
         # Should get patterns created in the last 3 hours (pattern2 and pattern3)
         assert len(activity_data["system_patterns"]) == 2
         pattern_names = [p["name"] for p in activity_data["system_patterns"]]
@@ -594,8 +595,9 @@ class TestTimestampFiltering:
 
     def test_timestamp_filtering_with_different_item_types(self, db_session):
         """Test timestamp filtering works correctly across different item types."""
-        from conport.services import meta_service
         import datetime
+
+        from conport.services import meta_service
 
         now = datetime.datetime.utcnow()
         cutoff_time = now - datetime.timedelta(hours=2)
@@ -610,7 +612,7 @@ class TestTimestampFiltering:
             summary="Recent decision",
             timestamp=now
         )
-        
+
         old_progress = models.ProgressEntry(
             status="DONE",
             description="Old progress",
@@ -618,10 +620,10 @@ class TestTimestampFiltering:
         )
         recent_progress = models.ProgressEntry(
             status="IN_PROGRESS",
-            description="Recent progress", 
+            description="Recent progress",
             timestamp=now
         )
-        
+
         old_pattern = models.SystemPattern(
             name="Old Pattern",
             timestamp=old_time
@@ -633,7 +635,7 @@ class TestTimestampFiltering:
 
         db_session.add_all([
             old_decision, recent_decision,
-            old_progress, recent_progress, 
+            old_progress, recent_progress,
             old_pattern, recent_pattern
         ])
         db_session.commit()
@@ -644,17 +646,18 @@ class TestTimestampFiltering:
         # Should only get recent items
         assert len(result["decisions"]) == 1
         assert result["decisions"][0].summary == "Recent decision"
-        
+
         assert len(result["progress"]) == 1
         assert result["progress"][0].description == "Recent progress"
-        
+
         assert len(result["system_patterns"]) == 1
         assert result["system_patterns"][0].name == "Recent Pattern"
 
     def test_timestamp_filtering_boundary_conditions(self, db_session):
         """Test timestamp filtering boundary conditions."""
-        from conport.services import meta_service
         import datetime
+
+        from conport.services import meta_service
 
         now = datetime.datetime.utcnow()
         exact_cutoff = now - datetime.timedelta(hours=1)
@@ -688,8 +691,9 @@ class TestTimestampFiltering:
 
     def test_timestamp_filtering_with_limit(self, db_session):
         """Test that timestamp filtering works correctly with limit parameter."""
-        from conport.services import meta_service
         import datetime
+
+        from conport.services import meta_service
 
         now = datetime.datetime.utcnow()
         cutoff_time = now - datetime.timedelta(hours=1)
@@ -711,7 +715,7 @@ class TestTimestampFiltering:
 
         # Should respect both filters
         assert len(result["decisions"]) == 3  # Limited by limit parameter
-        
+
         # All returned items should be after cutoff
         for decision in result["decisions"]:
             assert decision.timestamp >= cutoff_time

@@ -1,5 +1,4 @@
-"""
-Comprehensive tests for Link service functionality.
+"""Comprehensive tests for Link service functionality.
 
 Tests the link management functionality for ConPort including:
 - Link creation between ConPort items
@@ -91,7 +90,7 @@ def create_test_items(db_session):
     """Helper function to create test items for linking."""
     # Generate unique timestamp for this test run
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    
+
     # Create test decisions
     decision1 = models.Decision(
         summary="Use microservices architecture",
@@ -101,7 +100,7 @@ def create_test_items(db_session):
         summary="Implement API gateway",
         rationale="Centralized routing and security"
     )
-    
+
     # Create test progress entries
     progress1 = models.ProgressEntry(
         status="IN_PROGRESS",
@@ -111,16 +110,16 @@ def create_test_items(db_session):
         status="TODO",
         description="Set up API gateway"
     )
-    
+
     # Create test system patterns with unique names
     pattern1 = models.SystemPattern(
         name=f"Service Discovery Pattern {timestamp}",
         description="Pattern for service registration and discovery"
     )
-    
+
     db_session.add_all([decision1, decision2, progress1, progress2, pattern1])
     db_session.commit()
-    
+
     return {
         "decisions": [decision1, decision2],
         "progress": [progress1, progress2],
@@ -168,10 +167,10 @@ class TestLinkCreation:
             f"/workspaces/{workspace_b64}/links/",
             json=link_data
         )
-        
+
         assert response.status_code == 201
         created_link = response.json()
-        
+
         assert created_link["source_item_type"] == "decision"
         assert created_link["source_item_id"] == str(decision.id)
         assert created_link["target_item_type"] == "progress"
@@ -202,10 +201,10 @@ class TestLinkCreation:
             f"/workspaces/{workspace_b64}/links/",
             json=link_data
         )
-        
+
         assert response.status_code == 201
         created_link = response.json()
-        
+
         assert created_link["description"] is None
         assert created_link["relationship_type"] == "uses"
 
@@ -253,16 +252,16 @@ class TestLinkCreation:
         # Verify both links exist
         links = db_session.query(models.ContextLink).all()
         assert len(links) == 2
-        
+
         relationship_types = [link.relationship_type for link in links]
         assert "depends_on" in relationship_types
         assert "enables" in relationship_types
 
     def test_create_link_service_function_directly(self, db_session):
         """Test the link creation service function directly."""
-        from conport.services import link_service
         from conport.schemas.link import LinkCreate
-        
+        from conport.services import link_service
+
         test_items = create_test_items(db_session)
         decision = test_items["decisions"][0]
         progress = test_items["progress"][0]
@@ -277,7 +276,7 @@ class TestLinkCreation:
         )
 
         created_link = link_service.create(db_session, link_data)
-        
+
         assert str(created_link.source_item_type) == "decision"
         assert str(created_link.source_item_id) == str(decision.id)
         assert str(created_link.target_item_type) == "progress"
@@ -340,12 +339,12 @@ class TestLinkRetrieval:
         response = client.get(
             f"/workspaces/{workspace_b64}/links/decision/{decision.id}"
         )
-        
+
         assert response.status_code == 200
         links = response.json()
-        
+
         assert len(links) == 2
-        
+
         # Verify both links are returned (decision can be source or target)
         relationship_types = [link["relationship_type"] for link in links]
         assert "implements" in relationship_types
@@ -362,7 +361,7 @@ class TestLinkRetrieval:
         response = client.get(
             f"/workspaces/{workspace_b64}/links/decision/{decision.id}"
         )
-        
+
         assert response.status_code == 200
         links = response.json()
         assert len(links) == 0
@@ -375,16 +374,16 @@ class TestLinkRetrieval:
         response = client.get(
             f"/workspaces/{workspace_b64}/links/decision/99999"
         )
-        
+
         assert response.status_code == 200
         links = response.json()
         assert len(links) == 0
 
     def test_get_links_service_function_directly(self, db_session):
         """Test the get links service function directly."""
-        from conport.services import link_service
         from conport.schemas.link import LinkCreate
-        
+        from conport.services import link_service
+
         test_items = create_test_items(db_session)
         decision = test_items["decisions"][0]
         progress = test_items["progress"][0]
@@ -401,14 +400,14 @@ class TestLinkRetrieval:
 
         # Retrieve links for the decision
         links = link_service.get_for_item(db_session, "decision", str(decision.id))
-        
+
         assert len(links) == 1
         assert str(links[0].relationship_type) == "directs"
         assert str(links[0].source_item_id) == str(decision.id)
 
         # Retrieve links for the progress entry
         links = link_service.get_for_item(db_session, "progress", str(progress.id))
-        
+
         assert len(links) == 1
         assert str(links[0].relationship_type) == "directs"
         assert str(links[0].target_item_id) == str(progress.id)
@@ -478,7 +477,7 @@ class TestLinkRelationshipTypes:
         # Verify all links were created
         links = db_session.query(models.ContextLink).all()
         assert len(links) == len(relationship_types)
-        
+
         created_rel_types = [link.relationship_type for link in links]
         for rel_type in relationship_types:
             assert rel_type in created_rel_types
@@ -505,7 +504,7 @@ class TestLinkRelationshipTypes:
             f"/workspaces/{workspace_b64}/links/",
             json=link_data
         )
-        
+
         assert response.status_code == 201
         created_link = response.json()
         assert created_link["source_item_id"] == created_link["target_item_id"]
@@ -521,7 +520,7 @@ class TestLinkRelationshipTypes:
 
         # Create multiple relationships between same items
         relationships = ["implements", "references", "validates"]
-        
+
         for rel_type in relationships:
             link_data = {
                 "source_item_type": "decision",
@@ -541,7 +540,7 @@ class TestLinkRelationshipTypes:
         # Verify all relationships exist
         links = db_session.query(models.ContextLink).all()
         assert len(links) == 3
-        
+
         created_rel_types = [link.relationship_type for link in links]
         for rel_type in relationships:
             assert rel_type in created_rel_types
@@ -567,7 +566,7 @@ class TestLinkErrorHandling:
             f"/workspaces/{workspace_b64}/links/",
             json=incomplete_link
         )
-        
+
         assert response.status_code == 422  # Validation error
 
     def test_create_link_empty_relationship_type(self, client: TestClient, db_session):
@@ -592,7 +591,7 @@ class TestLinkErrorHandling:
             f"/workspaces/{workspace_b64}/links/",
             json=link_data
         )
-        
+
         assert response.status_code == 422  # Validation error
 
     def test_get_links_with_limit(self, client: TestClient, db_session):
@@ -625,7 +624,7 @@ class TestLinkErrorHandling:
         response = client.get(
             f"/workspaces/{workspace_b64}/links/decision/{decision.id}"
         )
-        
+
         assert response.status_code == 200
         links = response.json()
         assert len(links) == 10  # All links should be returned (under limit)
@@ -655,7 +654,7 @@ class TestLinkErrorHandling:
             f"/workspaces/{workspace_b64}/links/",
             json=link_data
         )
-        
+
         assert response.status_code == 201
         created_link = response.json()
         assert len(created_link["description"]) == 2000
@@ -684,7 +683,7 @@ class TestLinkErrorHandling:
             f"/workspaces/{workspace_b64}/links/",
             json=link_data
         )
-        
+
         assert response.status_code == 201
         created_link = response.json()
         assert created_link["description"] == special_description

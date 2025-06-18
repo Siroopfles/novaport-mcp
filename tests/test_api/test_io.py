@@ -1,5 +1,4 @@
-"""
-Comprehensive tests for I/O service functionality.
+"""Comprehensive tests for I/O service functionality.
 
 Tests the export/import functionality for ConPort data including:
 - Export to markdown functionality
@@ -9,7 +8,6 @@ Tests the export/import functionality for ConPort data including:
 """
 
 import base64
-import json
 import shutil
 import tempfile
 from pathlib import Path
@@ -99,7 +97,7 @@ def create_test_decisions(db_session, count: int = 3):
             tags=["test", f"decision{i+1}"]
         )
         decisions.append(decision)
-    
+
     db_session.add_all(decisions)
     db_session.commit()
     return decisions
@@ -131,10 +129,10 @@ class TestIOExportFunctionality:
             f"/workspaces/{workspace_b64}/io/export",
             params={"export_dir": "test_export"}
         )
-        
+
         assert response.status_code == 200
         export_result = response.json()
-        
+
         assert export_result["status"] == "success"
         assert "path" in export_result
         assert "files_created" in export_result
@@ -144,7 +142,7 @@ class TestIOExportFunctionality:
         export_path = Path(export_result["path"])
         decisions_file = export_path / "decisions.md"
         assert decisions_file.exists()
-        
+
         content = decisions_file.read_text(encoding="utf-8")
         assert "# Decision Log" in content
         assert "Test Decision 1" in content
@@ -159,10 +157,10 @@ class TestIOExportFunctionality:
             f"/workspaces/{workspace_b64}/io/export",
             params={"export_dir": "empty_export"}
         )
-        
+
         assert response.status_code == 200
         export_result = response.json()
-        
+
         assert export_result["status"] == "success"
         # Should have empty files_created list for empty database
         assert export_result["files_created"] == []
@@ -186,7 +184,7 @@ class TestIOExportFunctionality:
             f"/workspaces/{workspace_b64}/io/export",
             params={"export_dir": "complex_export"}
         )
-        
+
         assert response.status_code == 200
         export_result = response.json()
         assert export_result["status"] == "success"
@@ -195,7 +193,7 @@ class TestIOExportFunctionality:
         export_path = Path(export_result["path"])
         decisions_file = export_path / "decisions.md"
         content = decisions_file.read_text(encoding="utf-8")
-        
+
         assert "äöü & <tags>" in content
         assert "Multi-line\nrationale" in content
         assert "special-chars, markdown, unicode" in content
@@ -203,20 +201,20 @@ class TestIOExportFunctionality:
     def test_export_service_function_directly(self, db_session):
         """Test the export service function directly."""
         from conport.services import io_service
-        
+
         # Create test data
         create_test_decisions(db_session, 1)
-        
+
         # Create temporary export directory
         with tempfile.TemporaryDirectory() as temp_dir:
             export_path = Path(temp_dir) / "direct_export"
-            
+
             result = io_service.export_to_markdown(db_session, export_path)
-            
+
             assert result["status"] == "success"
             assert str(export_path) == result["path"]
             assert "decisions.md" in result["files_created"]
-            
+
             # Verify file was created
             decisions_file = export_path / "decisions.md"
             assert decisions_file.exists()
@@ -246,7 +244,7 @@ class TestIOImportFunctionality:
         with tempfile.TemporaryDirectory() as temp_dir:
             import_dir = Path(temp_dir) / "import_test"
             import_dir.mkdir(parents=True, exist_ok=True)
-            
+
             decisions_content = """# Decision Log
 
 ## Use FastAPI for API development
@@ -263,10 +261,10 @@ PostgreSQL offers ACID compliance and excellent performance.
 
 ---
 """
-            
+
             decisions_file = import_dir / "decisions.md"
             decisions_file.write_text(decisions_content, encoding="utf-8")
-            
+
             # Copy the import directory to the workspace
             workspace_import_dir = Path(workspace_path) / "import_test"
             if workspace_import_dir.exists():
@@ -278,10 +276,10 @@ PostgreSQL offers ACID compliance and excellent performance.
                 f"/workspaces/{workspace_b64}/io/import",
                 params={"import_dir": "import_test"}
             )
-            
+
             assert response.status_code == 200
             import_result = response.json()
-            
+
             assert import_result["status"] == "completed"
             assert import_result["imported"] == 2
             assert import_result["failed"] == 0
@@ -289,7 +287,7 @@ PostgreSQL offers ACID compliance and excellent performance.
             # Verify decisions were imported
             decisions = db_session.query(models.Decision).all()
             assert len(decisions) == 2
-            
+
             summaries = [d.summary for d in decisions]
             assert "Use FastAPI for API development" in summaries
             assert "Implement PostgreSQL database" in summaries
@@ -303,7 +301,7 @@ PostgreSQL offers ACID compliance and excellent performance.
             f"/workspaces/{workspace_b64}/io/import",
             params={"import_dir": "nonexistent_dir"}
         )
-        
+
         # The service returns success with error message, not HTTP 500
         assert response.status_code == 200
         result = response.json()
@@ -319,7 +317,7 @@ PostgreSQL offers ACID compliance and excellent performance.
         with tempfile.TemporaryDirectory() as temp_dir:
             import_dir = Path(temp_dir) / "malformed_import"
             import_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Content with valid and invalid decision blocks
             malformed_content = """# Decision Log
 
@@ -334,10 +332,10 @@ Invalid block without proper structure
 **Rationale:** This should also work.
 ---
 """
-            
+
             decisions_file = import_dir / "decisions.md"
             decisions_file.write_text(malformed_content, encoding="utf-8")
-            
+
             # Copy to workspace
             workspace_import_dir = Path(workspace_path) / "malformed_import"
             if workspace_import_dir.exists():
@@ -348,10 +346,10 @@ Invalid block without proper structure
                 f"/workspaces/{workspace_b64}/io/import",
                 params={"import_dir": "malformed_import"}
             )
-            
+
             assert response.status_code == 200
             import_result = response.json()
-            
+
             assert import_result["status"] == "completed"
             assert import_result["imported"] == 2  # 2 valid decisions found
             assert import_result["failed"] == 0   # No actual parsing failures
@@ -359,11 +357,11 @@ Invalid block without proper structure
     def test_import_service_function_directly(self, db_session):
         """Test the import service function directly."""
         from conport.services import io_service
-        
+
         # Create temporary import directory with valid content
         with tempfile.TemporaryDirectory() as temp_dir:
             import_path = Path(temp_dir)
-            
+
             decisions_content = """# Decision Log
 
 ## Direct Service Test Decision
@@ -373,18 +371,18 @@ Testing the service function directly.
 
 ---
 """
-            
+
             decisions_file = import_path / "decisions.md"
             decisions_file.write_text(decisions_content, encoding="utf-8")
-            
+
             result = io_service.import_from_markdown(
                 db_session, "test_workspace", import_path
             )
-            
+
             assert result["status"] == "completed"
             assert result["imported"] == 1
             assert result["failed"] == 0
-            
+
             # Verify decision was imported
             decisions = db_session.query(models.Decision).all()
             assert len(decisions) == 1
@@ -397,22 +395,22 @@ class TestIOErrorHandling:
     def test_export_invalid_workspace(self, client: TestClient):
         """Test export with invalid workspace encoding."""
         invalid_workspace_b64 = "invalid_base64_encoding"
-        
+
         response = client.post(
             f"/workspaces/{invalid_workspace_b64}/io/export"
         )
-        
+
         assert response.status_code == 500
         assert "Export failed" in response.json()["detail"]
 
     def test_import_invalid_workspace(self, client: TestClient):
         """Test import with invalid workspace encoding."""
         invalid_workspace_b64 = "invalid_base64_encoding"
-        
+
         response = client.post(
             f"/workspaces/{invalid_workspace_b64}/io/import"
         )
-        
+
         assert response.status_code == 500
         assert "Import failed" in response.json()["detail"]
 
@@ -428,7 +426,7 @@ class TestIOErrorHandling:
             f"/workspaces/{workspace_b64}/io/export",
             params={"export_dir": custom_dir}
         )
-        
+
         assert response.status_code == 200
         export_result = response.json()
         assert custom_dir in export_result["path"]
@@ -441,11 +439,11 @@ class TestIOErrorHandling:
         with tempfile.TemporaryDirectory() as temp_dir:
             import_dir = Path(temp_dir) / "empty_import"
             import_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Create empty decisions file
             decisions_file = import_dir / "decisions.md"
             decisions_file.write_text("", encoding="utf-8")
-            
+
             # Copy to workspace
             workspace_import_dir = Path(workspace_path) / "empty_import"
             if workspace_import_dir.exists():
@@ -456,7 +454,7 @@ class TestIOErrorHandling:
                 f"/workspaces/{workspace_b64}/io/import",
                 params={"import_dir": "empty_import"}
             )
-            
+
             assert response.status_code == 200
             import_result = response.json()
             assert import_result["imported"] == 0
