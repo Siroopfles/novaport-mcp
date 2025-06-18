@@ -11,9 +11,10 @@ All original features of ConPort have been preserved, but the underlying archite
 This version is superior to the original in the following ways:
 
 -   **Modern Python & Tooling:** Built entirely with Python 3.11+ and managed by [Poetry](https://python-poetry.org/) for robust dependency management and reproducible builds.
--   **Robust Database Layer:** Utilizes the **SQLAlchemy 2.0 ORM** with a **per-workspace SQLite database**, ensuring project data is fully isolated.
--   **Automated Database Migrations:** Thanks to the **Alembic** integration, a new workspace database is automatically created and migrated to the latest schema on its first use.
--   **Clean Architecture:** The project follows a clear separation of layers (`api`, `services`, `schemas`, `db`), making it highly maintainable and easy to extend.
+-   **Robust Database Layer:** Utilizes the **SQLAlchemy 2.0 ORM** with a **per-workspace SQLite database**, ensuring project data is fully isolated and providing superior performance and reliability.
+-   **Automated Database Migrations:** Thanks to the **Alembic** integration, no manual database setup is required - a new workspace database is automatically created and migrated to the latest schema on its first use.
+-   **Clean Architecture:** The project follows a clear separation of layers (`api`, `services`, `schemas`, `db`), making it highly maintainable and easy to extend while ensuring excellent code organization and scalability.
+-   **Fully Tested & Validated:** Built with a comprehensive test suite using `pytest` and validated by a Continuous Integration (CI/CD) workflow on GitHub Actions. This ensures code quality, type-safety, and correct functionality with every change.
 -   **Reliable Server Communication:** Uses the excellent `fastmcp` library to provide a stable `stdio`-based server, as required by MCP clients like Roo Code.
 -   **Full Type Safety:** Pydantic schemas are used throughout the application for strict data validation, from tool inputs to database outputs.
 
@@ -42,6 +43,7 @@ This version is superior to the original in the following ways:
 
 4.  **Database Setup:**
     There is no manual database setup needed! The server automatically creates and migrates a `conport.db` file inside a `.novaport_data` directory within your project workspace the first time you use a tool for that workspace.
+    
 ## Docker Deployment
 
 For containerized deployment, NovaPort-MCP provides a production-ready Docker image built with Poetry and optimized for security and performance.
