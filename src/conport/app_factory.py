@@ -35,6 +35,11 @@ def create_app() -> FastAPI:
         """Provides a simple health check response."""
         return {"status": "ok", "project_name": settings.PROJECT_NAME}
 
+    @app.get("/health", tags=["Health"])
+    def health_check():
+        """Provides a simple health check response for monitoring."""
+        return {"status": "ok"}
+
     # Include all API routers
     # These routers now expect a workspace_id in their path
     app.include_router(context.router)

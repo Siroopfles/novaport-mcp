@@ -1,37 +1,31 @@
-import argparse
+import typer
 
 from .main import mcp_server
 
+cli = typer.Typer(
+    name="conport",
+    help="NovaPort MCP: A robust, multi-workspace context server for AI assistants.",
+    add_completion=False,
+)
 
-def main():
-    """NovaPort MCP: A robust, multi-workspace context server for AI assistants.
-    """
-    parser = argparse.ArgumentParser(
-        description="NovaPort MCP: A robust, multi-workspace context server for AI assistants.",
-        prog="conport"
-    )
-    parser.add_argument(
-        "--version", "-v",
-        action="version",
-        version="conport-v2 version 0.1.0-beta"
-    )
-    parser.add_argument(
-        "command",
-        nargs="?",
-        choices=["start"],
-        help="Command to execute (default: start)"
-    )
+@cli.command(help="Starts the NovaPort-MCP server in STDIO mode (default command).")
+def start():
+    """Start the server in STDIO mode, waiting for tool calls with a 'workspace_id'."""
+    print("Starting NovaPort-MCP server in STDIO mode...")
+    print("This server is multi-workspace capable.")
+    print("Waiting for tool calls with a 'workspace_id' argument...")
+    mcp_server.run(transport="stdio")
 
-    args = parser.parse_args()
+@cli.command(help="Show the application's version and exit.")
+def version():
+    """Show the application's version and exit."""
+    print("NovaPort-MCP version: 0.1.0-beta")
 
-    # Default to start command if no command given
-    if args.command is None or args.command == "start":
-        print("Starting NovaPort-MCP server in STDIO mode...")
-        print("This server is multi-workspace capable.")
-        print("Waiting for tool calls with a 'workspace_id' argument...")
-        mcp_server.run(transport="stdio")
-    else:
-        parser.print_help()
+@cli.callback(invoke_without_command=True)
+def main(ctx: typer.Context):
+    """Handle CLI callback that invokes start command when no subcommand is given."""
+    if ctx.invoked_subcommand is None:
+        start()
 
 if __name__ == "__main__":
-    main()
+    cli()

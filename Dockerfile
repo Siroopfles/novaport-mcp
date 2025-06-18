@@ -51,8 +51,7 @@ RUN chown -R conport:conport /app
 USER conport
 
 # Set environment variables for the application
-ENV PYTHONPATH="/app/src:$PYTHONPATH" \
-    CONPORT_LOG_LEVEL=INFO \
+ENV CONPORT_LOG_LEVEL=INFO \
     CONPORT_HOST=0.0.0.0 \
     CONPORT_PORT=8000
 
