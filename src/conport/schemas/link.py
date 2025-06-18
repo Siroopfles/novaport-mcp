@@ -1,7 +1,7 @@
 import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LinkBase(BaseModel):
@@ -9,7 +9,7 @@ class LinkBase(BaseModel):
     source_item_id: str
     target_item_type: str
     target_item_id: str
-    relationship_type: str
+    relationship_type: str = Field(..., min_length=1, description="The type of relationship between items")
     description: Optional[str] = None
 class LinkCreate(LinkBase): pass
 class LinkRead(LinkBase):

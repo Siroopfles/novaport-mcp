@@ -42,6 +42,209 @@ This version is superior to the original in the following ways:
 
 4.  **Database Setup:**
     There is no manual database setup needed! The server automatically creates and migrates a `conport.db` file inside a `.novaport_data` directory within your project workspace the first time you use a tool for that workspace.
+## Docker Deployment
+
+For containerized deployment, NovaPort-MCP provides a production-ready Docker image built with Poetry and optimized for security and performance.
+
+### Building the Image
+
+Build the Docker image with the following command:
+
+```bash
+docker build -t novaport-mcp:v0.1.0-beta .
+```
+
+You can also build with a custom tag:
+
+```bash
+docker build -t novaport-mcp:latest .
+```
+
+**Note:** The build process uses Poetry for dependency management and creates a multi-stage build optimized for production use.
+
+### Running the Container
+
+#### Basic Container Run
+
+Start the container with port mapping:
+
+```bash
+docker run -d --name novaport-mcp -p 8000:8000 novaport-mcp:v0.1.0-beta
+```
+
+#### Running with Volume Mount for Data Persistence
+
+To persist workspace data across container restarts, mount a volume:
+
+```bash
+docker run -d --name novaport-mcp \
+  -p 8000:8000 \
+  -v $(pwd)/data:/app/data \
+  novaport-mcp:v0.1.0-beta
+```
+
+#### Running with Environment Variables
+
+Configure the application using environment variables:
+
+```bash
+docker run -d --name novaport-mcp \
+  -p 8000:8000 \
+  -e CONPORT_LOG_LEVEL=DEBUG \
+  -e CONPORT_HOST=0.0.0.0 \
+  -e CONPORT_PORT=8000 \
+  -v $(pwd)/data:/app/data \
+  novaport-mcp:v0.1.0-beta
+```
+
+### Container Management
+
+#### Starting and Stopping
+
+```bash
+# Start the container
+docker start novaport-mcp
+
+# Stop the container
+docker stop novaport-mcp
+
+# Restart the container
+docker restart novaport-mcp
+```
+
+#### Viewing Logs
+
+```bash
+# View container logs
+docker logs novaport-mcp
+
+# Follow logs in real-time
+docker logs -f novaport-mcp
+
+# View last 100 lines
+docker logs --tail 100 novaport-mcp
+```
+
+#### Container Status and Health
+
+```bash
+# Check container status
+docker ps
+
+# Inspect container details
+docker inspect novaport-mcp
+
+# Check health status (built-in health check)
+docker inspect novaport-mcp | grep Health -A 5
+```
+
+#### Removing the Container
+
+```bash
+# Stop and remove the container
+docker stop novaport-mcp && docker rm novaport-mcp
+
+# Force remove (if container is stuck)
+docker rm -f novaport-mcp
+```
+
+### Environment Configuration
+
+The Docker image supports the following environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CONPORT_LOG_LEVEL` | `INFO` | Logging level (DEBUG, INFO, WARNING, ERROR) |
+| `CONPORT_HOST` | `0.0.0.0` | Host address to bind to |
+| `CONPORT_PORT` | `8000` | Port number for the HTTP API |
+| `DATABASE_URL` | (auto) | Custom database URL (optional) |
+| `PYTHONPATH` | `/app/src` | Python path for module imports |
+
+#### Example with Custom Configuration
+
+```bash
+docker run -d --name novaport-mcp \
+  -p 9000:9000 \
+  -e CONPORT_PORT=9000 \
+  -e CONPORT_LOG_LEVEL=DEBUG \
+  -e DATABASE_URL="postgresql://user:pass@host:5432/conport" \
+  -v $(pwd)/workspace_data:/app/data \
+  novaport-mcp:v0.1.0-beta
+```
+
+### Troubleshooting
+
+#### Common Issues and Solutions
+
+**Container fails to start:**
+```bash
+# Check container logs for error details
+docker logs novaport-mcp
+
+# Verify the image was built correctly
+docker images | grep novaport-mcp
+
+# Try running interactively for debugging
+docker run -it --rm novaport-mcp:v0.1.0-beta /bin/bash
+```
+
+**Port already in use:**
+```bash
+# Check what's using the port
+sudo netstat -tulpn | grep :8000
+
+# Use a different port mapping
+docker run -d --name novaport-mcp -p 8080:8000 novaport-mcp:v0.1.0-beta
+```
+
+**Permission issues with volumes:**
+```bash
+# Ensure the mounted directory has proper permissions
+chmod 755 $(pwd)/data
+
+# Check the container user (runs as non-root 'conport' user)
+docker exec novaport-mcp id
+```
+
+**Health check failures:**
+```bash
+# Check if the health endpoint is accessible
+docker exec novaport-mcp curl -f http://localhost:8000/health
+
+# Verify port configuration
+docker port novaport-mcp
+```
+
+**Database connectivity issues:**
+```bash
+# Check environment variables
+docker exec novaport-mcp env | grep -E "(DATABASE|CONPORT)"
+
+# Test database connection inside container
+docker exec -it novaport-mcp python -c "from src.conport.db.database import get_database; print('DB OK')"
+```
+
+#### Production Deployment Considerations
+
+- **Resource Limits:** Set appropriate CPU and memory limits for production:
+  ```bash
+  docker run -d --name novaport-mcp \
+    --memory="512m" --cpus="1.0" \
+    -p 8000:8000 \
+    novaport-mcp:v0.1.0-beta
+  ```
+
+- **Restart Policy:** Use restart policies for automatic recovery:
+  ```bash
+  docker run -d --name novaport-mcp \
+    --restart=unless-stopped \
+    -p 8000:8000 \
+    novaport-mcp:v0.1.0-beta
+  ```
+
+- **Security:** The container runs as a non-root user (`conport`) for enhanced security.
+
+- **Monitoring:** The built-in health check endpoint (`/health`) can be used with orchestration tools like Docker Compose, Kubernetes, or monitoring systems.
 
 ## Running the Server
 
@@ -130,3 +333,27 @@ Note: PostgreSQL configuration requires running database migrations and is recom
     2.  **Open your browser:**
         -   Interactive API docs (Swagger): [http://localhost:8000/docs](http://localhost:8000/docs)
         -   Alternative API docs (ReDoc): [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+## Usage with LLM Agents (Custom Instructions)
+
+For LLM agents and AI assistants working with ConPort, comprehensive guidance is available in the [`conport-custom-instructions/generic_conport_strategy.yml`](conport-custom-instructions/generic_conport_strategy.yml) file. This strategy document provides:
+
+- **Tool Usage Patterns:** Best practices for using ConPort tools effectively
+- **Workflow Strategies:** Recommended approaches for different types of development tasks
+- **Context Management:** Guidelines for maintaining context across tool calls
+- **Error Handling:** Common error scenarios and recovery strategies
+
+The custom instructions are designed to help LLM agents understand ConPort's capabilities and use them efficiently in software development workflows.
+
+## Documentation
+
+For detailed technical information, architecture insights, and implementation details, refer to our comprehensive documentation:
+
+- **[Technical Deep Dive](docs/deep_dive.md):** In-depth coverage of ConPort's architecture, design decisions, database schema, and advanced usage patterns. Essential reading for contributors and users requiring detailed understanding of the system.
+
+## Release Information
+
+Stay informed about ConPort updates and changes:
+
+- **[Release Notes](RELEASE_NOTES.md):** Complete version history with detailed changelogs, new features, bug fixes, and breaking changes
+- **[Update Guide](UPDATE_GUIDE.md):** Step-by-step migration procedures for updating between versions, including configuration changes and compatibility notes

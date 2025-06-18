@@ -31,7 +31,7 @@ ruff = "^0.4.10"
 mypy = "^1.8.0"
 
 [tool.poetry.scripts]
-conport = "conport.__main__:cli"
+conport = "conport.__main__:main"
 
 [build-system]
 requires = ["poetry-core"]
