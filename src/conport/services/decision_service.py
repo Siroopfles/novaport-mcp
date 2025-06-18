@@ -11,6 +11,7 @@ from . import vector_service
 
 # The create function now takes a workspace_id parameter
 def create(db: Session, workspace_id: str, decision: decision_schema.DecisionCreate) -> models.Decision:
+    """Create a new decision and update vector embeddings."""
     db_decision = models.Decision(**decision.model_dump())
     db.add(db_decision)
     db.commit()
@@ -25,6 +26,7 @@ def create(db: Session, workspace_id: str, decision: decision_schema.DecisionCre
     return db_decision
 
 def get(db: Session, decision_id: int) -> Optional[models.Decision]:
+    """Retrieve a single decision by its ID."""
     return db.query(models.Decision).filter(models.Decision.id == decision_id).first()
 
 def get_multi(
@@ -35,6 +37,7 @@ def get_multi(
     tags_any: Optional[List[str]] = None,
     since: Optional[datetime.datetime] = None
 ) -> List[models.Decision]:
+    """Retrieve multiple decisions with optional filtering by tags and date."""
     query = db.query(models.Decision)
     if tags_all:
         for tag in tags_all:
@@ -47,6 +50,7 @@ def get_multi(
     return query.order_by(models.Decision.timestamp.desc()).offset(skip).limit(limit).all()
 
 def delete(db: Session, workspace_id: str, decision_id: int) -> Optional[models.Decision]:
+    """Delete a decision and its vector embedding."""
     db_decision = get(db, decision_id)
     if db_decision:
         vector_service.delete_embedding(workspace_id, f"decision_{decision_id}")
@@ -55,6 +59,7 @@ def delete(db: Session, workspace_id: str, decision_id: int) -> Optional[models.
     return db_decision
 
 def search_fts(db: Session, query: str, limit: int = 10) -> List[models.Decision]:
+    """Perform full-text search on decisions with fallback to basic search."""
     # This part depends on whether you have FTS tables in your migrations.
     # If this gives an error, the FTS setup in Alembic needs to be checked.
     # For now we assume that the 'decisions_fts' table exists.

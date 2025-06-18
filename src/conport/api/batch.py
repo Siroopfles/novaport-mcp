@@ -14,7 +14,7 @@ def batch_log_items(
     request: batch_schema.BatchLogRequest,
     db: Session = Depends(get_db)
 ):
-    """Logs multiple items of the same type in a single request for a specific workspace."""
+    """Log multiple items of the same type in a single request for a specific workspace."""
     try:
         workspace_id = decode_workspace_id(workspace_id_b64)
         result = meta_service.batch_log_items(db, workspace_id, request.item_type, request.items)

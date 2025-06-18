@@ -7,7 +7,7 @@ from pathlib import Path
 
 def robust_rmtree(path: str | Path, max_retries: int = 3, base_delay: float = 1.0):
     """Remove a directory with retry mechanism and exponential backoff.
-    
+
     Args:
     ----
         path: The path to remove

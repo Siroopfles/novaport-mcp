@@ -13,6 +13,7 @@ from . import vector_service
 log = logging.getLogger(__name__)
 
 def upsert(db: Session, workspace_id: str, data: cd_schema.CustomDataCreate) -> models.CustomData:
+    """Create or update custom data entry and update vector embeddings."""
     try:
         db_data = db.query(models.CustomData).filter_by(category=data.category, key=data.key).one()
         db_data.value = data.value
@@ -31,12 +32,15 @@ def upsert(db: Session, workspace_id: str, data: cd_schema.CustomDataCreate) -> 
     return db_data
 
 def get(db: Session, category: str, key: str) -> models.CustomData | None:
+    """Retrieve a single custom data item by category and key."""
     return db.query(models.CustomData).filter_by(category=category, key=key).first()
 
 def get_by_category(db: Session, category: str) -> List[models.CustomData]:
+    """Retrieve all custom data items for a specific category."""
     return db.query(models.CustomData).filter_by(category=category).all()
 
 def delete(db: Session, workspace_id: str, category: str, key: str) -> models.CustomData | None:
+    """Delete a custom data item and its vector embedding."""
     db_data = get(db, category, key)
     if db_data:
         vector_service.delete_embedding(workspace_id, f"custom_data_{db_data.id}")
@@ -45,6 +49,7 @@ def delete(db: Session, workspace_id: str, category: str, key: str) -> models.Cu
     return db_data
 
 def search_fts(db: Session, query: str, category: str | None = None, limit: int = 10) -> List[models.CustomData]:
+    """Perform full-text search on custom data items."""
     where_clauses, params = ["fts.custom_data_fts MATCH :query"], {"query": query, "limit": limit}
     if category:
         where_clauses.append("fts.category = :category")

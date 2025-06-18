@@ -1,7 +1,7 @@
-"""Initial schema with all models
+"""Initial schema with all models.
 
 Revision ID: 846450266f55
-Revises: 
+Revises:
 Create Date: 2025-06-15 23:06:02.317643
 
 """

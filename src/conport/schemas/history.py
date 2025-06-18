@@ -5,6 +5,8 @@ from pydantic import BaseModel, ConfigDict
 
 
 class HistoryRead(BaseModel):
+    """Represent history data for read operations."""
+
     id: int
     timestamp: datetime.datetime
     version: int

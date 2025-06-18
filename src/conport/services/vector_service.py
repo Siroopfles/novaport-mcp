@@ -18,7 +18,9 @@ _collections: Dict[str, chromadb.Collection] = {}
 def get_embedding_model() -> SentenceTransformer:
     global _model
     if _model is None:
-        log.info(f"Loading sentence transformer model: {core_config.settings.EMBEDDING_MODEL_NAME}...")
+        log.info(
+            f"Loading sentence transformer model: {core_config.settings.EMBEDDING_MODEL_NAME}..."
+        )
         _model = SentenceTransformer(core_config.settings.EMBEDDING_MODEL_NAME)
         log.info("Embedding model loaded.")
     return _model
@@ -32,8 +34,12 @@ def cleanup_chroma_client(workspace_id: str) -> None:
     global _chroma_clients, _collections
 
     # Determine the db_path for the workspace
-    db_path = str(Path(core_config.get_vector_db_path_for_workspace(workspace_id)).resolve())
-    log.info(f"Cleaning up ChromaDB client for workspace: {workspace_id} (db_path: {db_path})")
+    db_path = str(
+        Path(core_config.get_vector_db_path_for_workspace(workspace_id)).resolve()
+    )
+    log.info(
+        f"Cleaning up ChromaDB client for workspace: {workspace_id} (db_path: {db_path})"
+    )
 
     if db_path in _chroma_clients:
         try:
@@ -42,7 +48,9 @@ def cleanup_chroma_client(workspace_id: str) -> None:
             # Reset all collections first
             for collection in client.list_collections():
                 collection_name = collection.name
-                log.info(f"Cleaning up collection: {collection_name} (type: {type(collection_name)})")
+                log.info(
+                    f"Cleaning up collection: {collection_name} (type: {type(collection_name)})"
+                )
 
                 # Delete all documents first
                 if collection.count() > 0:
@@ -55,11 +63,15 @@ def cleanup_chroma_client(workspace_id: str) -> None:
 
             # Selective cache clearing - only for the current workspace
             # This is crucial after a reset because all collections are invalid
-            keys_to_remove = [key for key in _collections if key.startswith(workspace_id)]
+            keys_to_remove = [
+                key for key in _collections if key.startswith(workspace_id)
+            ]
             for key in keys_to_remove:
                 del _collections[key]
                 log.debug(f"Removed collection from cache: {key}")
-            log.info(f"Selectively removed {len(keys_to_remove)} collection(s) from cache for workspace: {workspace_id}")
+            log.info(
+                f"Selectively removed {len(keys_to_remove)} collection(s) from cache for workspace: {workspace_id}"
+            )
 
             import time
             time.sleep(CHROMA_CLEANUP_DELAY)  # Give Windows more time to release handles
@@ -107,7 +119,7 @@ def get_collection(
         if cache_key in _collections:
             try:
                 # Test if the cached collection is still valid by calling the count() method
-                collection_count = _collections[cache_key].count()
+                _collections[cache_key].count()
                 return _collections[cache_key]
             except Exception:
                 # If the collection is invalid, remove from cache

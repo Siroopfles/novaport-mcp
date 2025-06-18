@@ -36,8 +36,7 @@ db_path = Path(get_test_db_url().replace("sqlite:///", ""))
 run_migrations_for_workspace(engine, db_path)
 
 def override_get_db():
-    """Override the 'get_db' dependency for the tests.
-    """
+    """Override the 'get_db' dependency for the tests."""
     db = TestingSessionLocal()
     try:
         yield db

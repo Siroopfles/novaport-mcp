@@ -1,11 +1,11 @@
 from sqlalchemy import event, select
-from sqlalchemy.orm import InstanceState, Session, attributes
+from sqlalchemy.orm import Session, attributes
 
 from ..db import models
 
 
 def _add_history(target, history_model, change_source):
-    db_state: InstanceState = attributes.instance_state(target)
+    attributes.instance_state(target)
     content_history = attributes.get_history(target, 'content')
     if not content_history.deleted: return
     old_content = content_history.deleted[0]

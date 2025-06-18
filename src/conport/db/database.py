@@ -78,8 +78,8 @@ async def get_db(workspace_id_b64: str) -> AsyncGenerator[Session, None]:
     db = None
     try:
         workspace_id = core_config.decode_workspace_id(workspace_id_b64)
-        SessionLocal = await get_session_local(workspace_id)
-        db = SessionLocal()
+        session_local = await get_session_local(workspace_id)
+        db = session_local()
         yield db
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -92,8 +92,8 @@ async def get_db(workspace_id_b64: str) -> AsyncGenerator[Session, None]:
 async def get_db_session_for_workspace(workspace_id: str) -> AsyncGenerator[Session, None]:
     db = None
     try:
-        SessionLocal = await get_session_local(workspace_id)
-        db = SessionLocal()
+        session_local = await get_session_local(workspace_id)
+        db = session_local()
         yield db
     except Exception as e:
         log.error(f"Error while retrieving DB session for workspace '{workspace_id}': {e}", exc_info=True)

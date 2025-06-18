@@ -43,7 +43,10 @@ from .services import (
     vector_service,
 )
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 log = logging.getLogger(__name__)
 
 # Initialize the history service to register event listeners
@@ -71,7 +74,10 @@ def with_db_session(func: Callable[..., Any]) -> Callable[..., Any]:
 @mcp_server.tool()
 @with_db_session
 async def get_product_context(
-    workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
+    workspace_id: Annotated[
+        str,
+        Field(description="Identifier for the workspace (e.g., absolute path)")
+    ],
     **kwargs: Any
 ) -> Any:
     """Retrieves the overall project goals, features, and architecture."""
@@ -101,7 +107,11 @@ async def update_product_context(
     ] = None,
     **kwargs: Any
 ) -> Union[Any, MCPError]:
-    """Updates the product context. Accepts full `content` (object) or `patch_content` (object) for partial updates (use `__DELETE__` as a value in patch to remove a key)."""
+    """Updates the product context.
+    
+    Accepts full `content` (object) or `patch_content` (object) for partial
+    updates (use `__DELETE__` as a value in patch to remove a key).
+    """
     db: Session = kwargs.pop('db')
     if content is None and patch_content is None:
         return MCPError(error="Either 'content' or 'patch_content' must be provided.")
@@ -149,7 +159,11 @@ async def update_active_context(
     ] = None,
     **kwargs: Any
 ) -> Union[Any, MCPError]:
-    """Updates the active context. Accepts full `content` (object) or `patch_content` (object) for partial updates (use `__DELETE__` as a value in patch to remove a key)."""
+    """Updates the active context.
+    
+    Accepts full `content` (object) or `patch_content` (object) for partial
+    updates (use `__DELETE__` as a value in patch to remove a key).
+    """
     db: Session = kwargs.pop('db')
     if content is None and patch_content is None:
         return MCPError(error="Either 'content' or 'patch_content' must be provided.")
@@ -169,14 +183,25 @@ async def update_active_context(
 async def log_decision(
     workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
     summary: Annotated[str, Field(description="A concise summary of the decision.")],
-    rationale: Annotated[Optional[str], Field(None, description="The reasoning behind the decision.")] = None,
-    implementation_details: Annotated[Optional[str], Field(None, description="Details about how the decision will be/was implemented.")] = None,
+    rationale: Annotated[
+        Optional[str],
+        Field(None, description="The reasoning behind the decision.")
+    ] = None,
+    implementation_details: Annotated[
+        Optional[str],
+        Field(None, description="Details about how the decision will be/was implemented.")
+    ] = None,
     tags: Annotated[Optional[List[str]], Field(None, description="Optional tags for categorization.")] = None,
     **kwargs: Any
 ) -> DecisionRead:
     """Logs an architectural or implementation decision."""
     db: Session = kwargs.pop('db')
-    data = decision_schema.DecisionCreate(summary=summary, rationale=rationale, implementation_details=implementation_details, tags=tags or [])
+    data = decision_schema.DecisionCreate(
+        summary=summary,
+        rationale=rationale,
+        implementation_details=implementation_details,
+        tags=tags or []
+    )
     created = decision_service.create(db, workspace_id, data)
     return DecisionRead.model_validate(created)
 
@@ -184,14 +209,28 @@ async def log_decision(
 @with_db_session
 async def get_decisions(
     workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
-    limit: Annotated[Optional[int], Field(None, description="Maximum number of decisions to return (most recent first).")] = None,
-    tags_filter_include_all: Annotated[Optional[List[str]], Field(None, description="Filter: items must include ALL of these tags.")] = None,
-    tags_filter_include_any: Annotated[Optional[List[str]], Field(None, description="Filter: items must include AT LEAST ONE of these tags.")] = None,
+    limit: Annotated[
+        Optional[int],
+        Field(None, description="Maximum number of decisions to return (most recent first).")
+    ] = None,
+    tags_filter_include_all: Annotated[
+        Optional[List[str]],
+        Field(None, description="Filter: items must include ALL of these tags.")
+    ] = None,
+    tags_filter_include_any: Annotated[
+        Optional[List[str]],
+        Field(None, description="Filter: items must include AT LEAST ONE of these tags.")
+    ] = None,
     **kwargs: Any
 ) -> List[DecisionRead]:
     """Retrieves logged decisions."""
     db: Session = kwargs.pop('db')
-    decisions = decision_service.get_multi(db, limit=limit or 100, tags_all=tags_filter_include_all, tags_any=tags_filter_include_any)
+    decisions = decision_service.get_multi(
+        db,
+        limit=limit or 100,
+        tags_all=tags_filter_include_all,
+        tags_any=tags_filter_include_any
+    )
     return [DecisionRead.model_validate(d) for d in decisions]
 
 @mcp_server.tool()
@@ -204,7 +243,14 @@ async def delete_decision_by_id(
     """Deletes a decision by its ID."""
     db: Session = kwargs.pop('db')
     deleted = decision_service.delete(db, workspace_id, decision_id)
-    return {"status": "success", "id": decision_id} if deleted else MCPError(error=f"Decision with ID {decision_id} not found", details={"id": decision_id})
+    return (
+        {"status": "success", "id": decision_id}
+        if deleted
+        else MCPError(
+            error=f"Decision with ID {decision_id} not found",
+            details={"id": decision_id}
+        )
+    )
 
 @mcp_server.tool()
 @with_db_session
@@ -212,49 +258,94 @@ async def log_progress(
     workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
     status: Annotated[str, Field(description="Current status (e.g., 'TODO', 'IN_PROGRESS', 'DONE').")],
     description: Annotated[str, Field(description="Description of the progress or task.")],
-    parent_id: Annotated[Optional[int], Field(None, description="ID of the parent task, if this is a subtask.")] = None,
-    linked_item_type: Annotated[Optional[str], Field(None, description="Optional: Type of the ConPort item to link.")] = None,
-    linked_item_id: Annotated[Optional[str], Field(None, description="Optional: ID/key of the ConPort item to link.")] = None,
-    link_relationship_type: Annotated[str, Field("relates_to_progress", description="Relationship type for the automatic link.")] = "relates_to_progress",
+    parent_id: Annotated[
+        Optional[int],
+        Field(None, description="ID of the parent task, if this is a subtask.")
+    ] = None,
+    linked_item_type: Annotated[
+        Optional[str],
+        Field(None, description="Optional: Type of the ConPort item to link.")
+    ] = None,
+    linked_item_id: Annotated[
+        Optional[str],
+        Field(None, description="Optional: ID/key of the ConPort item to link.")
+    ] = None,
+    link_relationship_type: Annotated[
+        str,
+        Field("relates_to_progress", description="Relationship type for the automatic link.")
+    ] = "relates_to_progress",
     **kwargs: Any
 ) -> ProgressEntryRead:
     """Logs a progress entry or task status."""
     db: Session = kwargs.pop('db')
-    entry_data = progress_schema.ProgressEntryCreate(status=status, description=description, parent_id=parent_id)
-    created = progress_service.create(db, workspace_id, entry_data, linked_item_type, linked_item_id, link_relationship_type)
+    entry_data = progress_schema.ProgressEntryCreate(
+        status=status, description=description, parent_id=parent_id
+    )
+    created = progress_service.create(
+        db, workspace_id, entry_data, linked_item_type,
+        linked_item_id, link_relationship_type
+    )
     return ProgressEntryRead.model_validate(created)
 
 @mcp_server.tool()
 @with_db_session
 async def get_progress(
     workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
-    limit: Annotated[Optional[int], Field(None, description="Maximum number of entries to return (most recent first).")] = None,
-    status_filter: Annotated[Optional[str], Field(None, description="Filter entries by status.")] = None,
-    parent_id_filter: Annotated[Optional[int], Field(None, description="Filter entries by parent task ID.")] = None,
+    limit: Annotated[
+        Optional[int],
+        Field(None, description="Maximum number of entries to return (most recent first).")
+    ] = None,
+    status_filter: Annotated[
+        Optional[str],
+        Field(None, description="Filter entries by status.")
+    ] = None,
+    parent_id_filter: Annotated[
+        Optional[int],
+        Field(None, description="Filter entries by parent task ID.")
+    ] = None,
     **kwargs: Any
 ) -> List[ProgressEntryRead]:
     """Retrieves progress entries."""
     db: Session = kwargs.pop('db')
-    entries = progress_service.get_multi(db, limit=limit or 50, status=status_filter, parent_id=parent_id_filter)
+    entries = progress_service.get_multi(
+        db, limit=limit or 50, status=status_filter, parent_id=parent_id_filter
+    )
     return [ProgressEntryRead.model_validate(p) for p in entries]
 
 @mcp_server.tool()
 @with_db_session
 async def update_progress(
     workspace_id: Annotated[str, Field(description="Identifier for the workspace (e.g., absolute path)")],
-    progress_id: Annotated[int, Field(description="The ID of the progress entry to update.")],
-    status: Annotated[Optional[str], Field(None, description="New status (e.g., 'TODO', 'IN_PROGRESS', 'DONE').")] = None,
-    description: Annotated[Optional[str], Field(None, description="New description of the progress or task.")] = None,
-    parent_id: Annotated[Optional[int], Field(None, description="New ID of the parent task, if changing.")] = None,
+    progress_id: Annotated[
+        int, Field(description="The ID of the progress entry to update.")
+    ],
+    status: Annotated[
+        Optional[str],
+        Field(None, description="New status (e.g., 'TODO', 'IN_PROGRESS', 'DONE').")
+    ] = None,
+    description: Annotated[
+        Optional[str],
+        Field(None, description="New description of the progress or task.")
+    ] = None,
+    parent_id: Annotated[
+        Optional[int],
+        Field(None, description="New ID of the parent task, if changing.")
+    ] = None,
     **kwargs: Any
 ) -> Union[ProgressEntryRead, MCPError]:
     """Updates an existing progress entry."""
     db: Session = kwargs.pop('db')
-    update_data = ProgressEntryUpdate(status=status, description=description, parent_id=parent_id)
+    update_data = ProgressEntryUpdate(
+        status=status, description=description, parent_id=parent_id
+    )
     if not update_data.model_dump(exclude_unset=True):
         return MCPError(error="No update fields provided.")
     updated = progress_service.update(db, progress_id, update_data)
-    return ProgressEntryRead.model_validate(updated) if updated else MCPError(error="Progress entry not found", details={"id": progress_id})
+    return (
+        ProgressEntryRead.model_validate(updated)
+        if updated
+        else MCPError(error="Progress entry not found", details={"id": progress_id})
+    )
 
 @mcp_server.tool()
 @with_db_session
@@ -266,7 +357,14 @@ async def delete_progress_by_id(
     """Deletes a progress entry by its ID."""
     db: Session = kwargs.pop('db')
     deleted = progress_service.delete(db, workspace_id, progress_id)
-    return {"status": "success", "id": progress_id} if deleted else MCPError(error=f"Progress entry with ID {progress_id} not found", details={"id": progress_id})
+    return (
+        {"status": "success", "id": progress_id}
+        if deleted
+        else MCPError(
+            error=f"Progress entry with ID {progress_id} not found",
+            details={"id": progress_id}
+        )
+    )
 
 @mcp_server.tool()
 @with_db_session
@@ -411,7 +509,7 @@ async def get_linked_items(
     """Retrieves items linked to a specific item."""
     db: Session = kwargs.pop('db')
     links = link_service.get_for_item(db, item_type, item_id, limit=limit or 50)
-    return [LinkRead.model_validate(l) for l in links]
+    return [LinkRead.model_validate(link_item) for link_item in links]
 
 @mcp_server.tool()
 @with_db_session
@@ -639,17 +737,17 @@ async def diff_context_versions(
     **kwargs: Any
 ) -> Union[List[Any], MCPError]:
     """Compares two versions of a ConPort item and returns the differences.
-    
+
     This function retrieves two specific versions of a context item (product_context or active_context)
     and compares their content using dictdiffer to show what has changed between versions.
-    
+
     Args:
     ----
         workspace_id: Identifier for the workspace
         item_type: Type of the item ('product_context' or 'active_context')
         version_a: Version number of the first item to compare
         version_b: Version number of the second item to compare
-        
+
     Returns:
     -------
         List of differences found by dictdiffer, or MCPError if versions not found

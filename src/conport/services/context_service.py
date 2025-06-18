@@ -21,11 +21,11 @@ def _get_or_create(
     return instance
 
 def get_product_context(db: Session) -> models.ProductContext:
-    """Retrieves the product context, creates it if it doesn't exist yet."""
+    """Retrieve the product context, creates it if it doesn't exist yet."""
     return _get_or_create(db, models.ProductContext)
 
 def get_active_context(db: Session) -> models.ActiveContext:
-    """Retrieves the active context, creates it if it doesn't exist yet."""
+    """Retrieve the active context, creates it if it doesn't exist yet."""
     return _get_or_create(db, models.ActiveContext)
 
 def update_context(
@@ -33,7 +33,7 @@ def update_context(
     instance: Union[models.ProductContext, models.ActiveContext],
     update_data: context_schema.ContextUpdate
 ) -> Union[models.ProductContext, models.ActiveContext]:
-    """Updates context with full content or patch-based updates."""
+    """Update context with full content or patch-based updates."""
     current_content = cast(Dict[str, Any], instance.content) or {}
     new_content = current_content.copy()
 

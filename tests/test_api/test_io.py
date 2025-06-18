@@ -2,7 +2,7 @@
 
 Tests the export/import functionality for ConPort data including:
 - Export to markdown functionality
-- Import from markdown functionality  
+- Import from markdown functionality
 - Error handling for invalid parameters
 - Edge cases and boundary conditions
 """
