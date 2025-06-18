@@ -70,5 +70,5 @@ CMD ["start"]
 LABEL org.opencontainers.image.title="NovaPort-MCP" \
       org.opencontainers.image.description="A robust, database-backed Model Context Protocol (MCP) server" \
       org.opencontainers.image.version="0.1.0-beta" \
-      org.opencontainers.image.authors="Siroopfles <siroopfles@novaport.dev>" \
+      org.opencontainers.image.authors="Siroopfles <selfpooris@gmail.com>" \
       org.opencontainers.image.source="https://github.com/novaport/novaport-mcp"

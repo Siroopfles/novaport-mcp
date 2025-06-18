@@ -25,7 +25,7 @@ We actively maintain security updates for the following versions of NovaPort-MCP
 
 Instead, please report security vulnerabilities responsibly by:
 
-**Email**: siroopfles@novaport.dev  
+**Email**: selfpooris@gmail.com  
 **Subject**: [SECURITY] Brief description of the vulnerability
 
 ### What to Include
@@ -212,7 +212,7 @@ We are considering implementing a formal bug bounty program as the project grows
 
 For all security-related matters:
 
-**Primary Contact**: siroopfles@novaport.dev  
+**Primary Contact**: selfpooris@gmail.com  
 **Response Time**: Within 24 hours  
 **PGP Key**: Available upon request  
 
@@ -220,7 +220,7 @@ For all security-related matters:
 
 For non-security bugs and general issues, please use:
 - **GitHub Issues**: https://github.com/siroopfles/novaport-mcp/issues
-- **General Contact**: siroopfles@novaport.dev
+- **General Contact**: selfpooris@gmail.com
 
 ## Acknowledgments
 

@@ -348,7 +348,7 @@ This project follows [Semantic Versioning](https://semver.org/):
 ## Getting Help
 
 - **GitHub Issues**: For bug reports and feature requests
-- **Email**: siroopfles@novaport.dev for security issues
+- **Email**: selfpooris@gmail.com for security issues
 - **Documentation**: Check [docs/deep_dive.md](docs/deep_dive.md) for architecture details
 
 ## License

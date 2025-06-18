@@ -55,7 +55,7 @@ This Code of Conduct also applies to behavior outside of community spaces when s
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders responsible for enforcement at **siroopfles@novaport.dev**.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders responsible for enforcement at **selfpooris@gmail.com**.
 
 All complaints will be reviewed and investigated promptly and fairly.
 
@@ -95,7 +95,7 @@ Community leaders will follow these Community Impact Guidelines in determining t
 
 If you experience or witness behavior that violates this Code of Conduct, please report it by:
 
-1. **Email**: Send a detailed report to siroopfles@novaport.dev
+1. **Email**: Send a detailed report to selfpooris@gmail.com
 2. **Include**: Date, time, location, individuals involved, and description of the incident
 3. **Evidence**: Screenshots, links, or other supporting materials if available
 
@@ -122,7 +122,7 @@ We prohibit retaliation against anyone who:
 
 If you disagree with an enforcement decision, you may appeal by:
 
-1. Sending an email to siroopfles@novaport.dev within 30 days of the decision
+1. Sending an email to selfpooris@gmail.com within 30 days of the decision
 2. Providing new information or context that wasn't considered in the original decision
 3. Explaining why you believe the decision was incorrect or disproportionate
 
@@ -140,7 +140,7 @@ This Code of Conduct may be updated periodically to reflect the evolving needs o
 
 For questions about this Code of Conduct or to report violations:
 
-**Email**: siroopfles@novaport.dev  
+**Email**: selfpooris@gmail.com  
 **Subject Line**: [Code of Conduct] Your Subject Here
 
 ## Attribution

@@ -2,7 +2,7 @@
 name = "novaport-mcp"
 version = "0.1.0-beta"
 description = "A robust, database-backed Model Context Protocol (MCP) server for managing structured project context."
-authors = ["Siroopfles <siroopfles@novaport.dev>"]
+authors = ["Siroopfles <selfpooris@gmail.com>"]
 readme = "README.md"
 packages = [{include = "conport", from = "src"}]
 
