@@ -26,5 +26,17 @@ jobs:
       - name: Run linter
         run: poetry run ruff check .
 
+      - name: Run type checker
+        run: poetry run mypy src/conport tests
+
+      - name: Run formatter check
+        run: poetry run black --check .
+
       - name: Run tests
         run: poetry run pytest --cov=conport
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # Optional
+          fail_ci_if_error: true # Optional
