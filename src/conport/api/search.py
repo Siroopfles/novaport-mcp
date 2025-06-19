@@ -8,6 +8,7 @@ from ..services import vector_service
 
 router = APIRouter(prefix="/workspaces/{workspace_id_b64}/search", tags=["Search"])
 
+
 @router.post("/semantic", response_model=List[search_schema.SemanticSearchResult])
 def semantic_search(workspace_id_b64: str, query: search_schema.SemanticSearchQuery):
     """Perform a semantic search across the vector store for a specific workspace.
@@ -19,7 +20,7 @@ def semantic_search(workspace_id_b64: str, query: search_schema.SemanticSearchQu
             workspace_id=workspace_id,
             query_text=query.query_text,
             top_k=query.top_k,
-            filters=query.filters
+            filters=query.filters,
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

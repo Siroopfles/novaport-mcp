@@ -17,6 +17,7 @@ app = create_app()
 # Use a fixed test-workspace.
 TEST_WORKSPACE_DIR = Path("./test_workspace_decisions")
 
+
 def get_test_db_url():
     """Generates the URL for the test database."""
     data_dir = TEST_WORKSPACE_DIR / ".novaport_data"
@@ -24,10 +25,9 @@ def get_test_db_url():
     db_path = data_dir.resolve() / "conport.db"
     return f"sqlite:///{db_path}"
 
+
 # Setup a test-specific database engine
-engine = create_engine(
-    get_test_db_url(), connect_args={"check_same_thread": False}
-)
+engine = create_engine(get_test_db_url(), connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # IMPROVED SETUP: Run the real Alembic migrations on the test database.
@@ -47,8 +47,10 @@ def override_get_db():
     finally:
         db.close()
 
+
 # Link the override to the 'get_db' dependency in the app.
 app.dependency_overrides[get_db] = override_get_db
+
 
 @pytest.fixture(scope="module")
 def client():
@@ -67,9 +69,11 @@ def client():
     # Use robust rmtree for cleanup
     robust_rmtree(TEST_WORKSPACE_DIR)
 
+
 def b64_encode(s: str) -> str:
     """Helper to encode paths for test URLs."""
     return base64.urlsafe_b64encode(s.encode()).decode()
+
 
 def test_create_and_read_decision(client: TestClient):
     """Test creating, retrieving and deleting a decision."""
@@ -81,7 +85,10 @@ def test_create_and_read_decision(client: TestClient):
     # 1. Create a decision
     response_create = client.post(
         f"/workspaces/{workspace_b64}/decisions/",
-        json={"summary": "Use Pytest for testing", "rationale": "For structured and scalable tests."}
+        json={
+            "summary": "Use Pytest for testing",
+            "rationale": "For structured and scalable tests.",
+        },
     )
     assert response_create.status_code == 201, response_create.text
     create_data = response_create.json()
@@ -105,9 +112,15 @@ def test_create_and_read_decision(client: TestClient):
     assert any(d["id"] == decision_id for d in all_data)
 
     # 4. Delete the decision
-    response_delete = client.delete(f"/workspaces/{workspace_b64}/decisions/{decision_id}")
+    response_delete = client.delete(
+        f"/workspaces/{workspace_b64}/decisions/{decision_id}"
+    )
     assert response_delete.status_code == 204, response_delete.text
 
     # 5. Check if it was deleted
-    response_read_after_delete = client.get(f"/workspaces/{workspace_b64}/decisions/{decision_id}")
-    assert response_read_after_delete.status_code == 404, response_read_after_delete.text
+    response_read_after_delete = client.get(
+        f"/workspaces/{workspace_b64}/decisions/{decision_id}"
+    )
+    assert (
+        response_read_after_delete.status_code == 404
+    ), response_read_after_delete.text

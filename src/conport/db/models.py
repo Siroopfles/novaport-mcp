@@ -10,10 +10,13 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.orm import DeclarativeBase, declarative_base, relationship
+from sqlalchemy.orm import DeclarativeBase, relationship
 
-# Define the Base HERE, within the models.py file.
-Base: type[DeclarativeBase] = declarative_base()
+
+class Base(DeclarativeBase):
+    """Base class for all database models."""
+    pass
+
 
 # Core Data Models
 class ProductContext(Base):
@@ -21,10 +24,12 @@ class ProductContext(Base):
     id = Column(Integer, primary_key=True, default=1)
     content = Column(JSON, nullable=False, default={})
 
+
 class ActiveContext(Base):
     __tablename__ = "active_context"
     id = Column(Integer, primary_key=True, default=1)
     content = Column(JSON, nullable=False, default={})
+
 
 class Decision(Base):
     __tablename__ = "decisions"
@@ -35,15 +40,24 @@ class Decision(Base):
     implementation_details = Column(Text, nullable=True)
     tags = Column(JSON, nullable=True)
 
+
 class ProgressEntry(Base):
     __tablename__ = "progress_entries"
     id = Column(Integer, primary_key=True, index=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow, index=True)
     status = Column(String, nullable=False, index=True)
     description = Column(Text, nullable=False)
-    parent_id = Column(Integer, ForeignKey("progress_entries.id", ondelete="SET NULL"), nullable=True)
+    parent_id = Column(
+        Integer, ForeignKey("progress_entries.id", ondelete="SET NULL"), nullable=True
+    )
     parent = relationship("ProgressEntry", remote_side=[id], back_populates="children")
-    children = relationship("ProgressEntry", back_populates="parent", cascade="all, delete-orphan", lazy="joined")
+    children = relationship(
+        "ProgressEntry",
+        back_populates="parent",
+        cascade="all, delete-orphan",
+        lazy="joined",
+    )
+
 
 class SystemPattern(Base):
     __tablename__ = "system_patterns"
@@ -53,6 +67,7 @@ class SystemPattern(Base):
     description = Column(Text, nullable=True)
     tags = Column(JSON, nullable=True)
 
+
 class CustomData(Base):
     __tablename__ = "custom_data"
     id = Column(Integer, primary_key=True, index=True)
@@ -60,7 +75,8 @@ class CustomData(Base):
     category = Column(String, index=True, nullable=False)
     key = Column(String, index=True, nullable=False)
     value = Column(JSON, nullable=False)
-    __table_args__ = (UniqueConstraint('category', 'key', name='_category_key_uc'),)
+    __table_args__ = (UniqueConstraint("category", "key", name="_category_key_uc"),)
+
 
 # Knowledge Graph Model
 class ContextLink(Base):
@@ -74,6 +90,7 @@ class ContextLink(Base):
     relationship_type = Column(String, nullable=False, index=True)
     description = Column(Text, nullable=True)
 
+
 # History/Audit Models
 class ProductContextHistory(Base):
     __tablename__ = "product_context_history"
@@ -82,6 +99,7 @@ class ProductContextHistory(Base):
     version = Column(Integer, nullable=False)
     content = Column(JSON, nullable=False)
     change_source = Column(String, nullable=True)
+
 
 class ActiveContextHistory(Base):
     __tablename__ = "active_context_history"

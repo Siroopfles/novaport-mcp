@@ -35,7 +35,7 @@ def export_to_markdown(db: Session, export_path: Path) -> Dict[str, Any]:
     return {
         "status": "success",
         "path": str(export_path),
-        "files_created": files_created
+        "files_created": files_created,
     }
 
 
@@ -48,7 +48,7 @@ def import_from_markdown(
     with open(import_path / "decisions.md", "r", encoding="utf-8") as f:
         content = f.read()
 
-    decision_blocks = content.split('---')
+    decision_blocks = content.split("---")
     imported_count = 0
     failed_count = 0
 
@@ -57,7 +57,7 @@ def import_from_markdown(
             continue
         try:
             # Find the line that contains the ## header
-            lines = block.strip().split('\n')
+            lines = block.strip().split("\n")
             summary = None
             for line in lines:
                 line = line.strip()
@@ -70,13 +70,10 @@ def import_from_markdown(
 
             rationale = None
             if "**Rationale:**" in block:
-                rationale = (
-                    block.split("**Rationale:**")[1].split("**")[0].strip()
-                )
+                rationale = block.split("**Rationale:**")[1].split("**")[0].strip()
 
             decision_data = decision_schema.DecisionCreate(
-                summary=summary,
-                rationale=rationale
+                summary=summary, rationale=rationale
             )
             decision_service.create(db, workspace_id, decision_data)
             imported_count += 1
@@ -95,5 +92,5 @@ def import_from_markdown(
         "message": (
             f"Successfully imported {imported_count} decisions, "
             f"{failed_count} failed to parse"
-        )
+        ),
     }

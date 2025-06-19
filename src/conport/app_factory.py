@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 
 from .api import (
@@ -26,7 +25,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.PROJECT_NAME,
         description="A robust, multi-workspace MCP server for NovaPort.",
-        version="2.1.0"
+        version="2.1.0",
     )
 
     # Health check at root

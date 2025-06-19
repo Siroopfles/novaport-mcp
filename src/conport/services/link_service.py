@@ -14,11 +14,21 @@ def create(db: Session, link: link_schema.LinkCreate) -> models.ContextLink:
     db.refresh(db_link)
     return db_link
 
-def get_for_item(db: Session, item_type: str, item_id: str, limit: int = 50) -> List[models.ContextLink]:
+
+def get_for_item(
+    db: Session, item_type: str, item_id: str, limit: int = 50
+) -> List[models.ContextLink]:
     item_id_str = str(item_id)
-    return db.query(models.ContextLink).filter(
-        or_(
-            (models.ContextLink.source_item_type == item_type) & (models.ContextLink.source_item_id == item_id_str),
-            (models.ContextLink.target_item_type == item_type) & (models.ContextLink.target_item_id == item_id_str)
+    return (
+        db.query(models.ContextLink)
+        .filter(
+            or_(
+                (models.ContextLink.source_item_type == item_type)
+                & (models.ContextLink.source_item_id == item_id_str),
+                (models.ContextLink.target_item_type == item_type)
+                & (models.ContextLink.target_item_id == item_id_str),
+            )
         )
-    ).limit(limit).all()
+        .limit(limit)
+        .all()
+    )

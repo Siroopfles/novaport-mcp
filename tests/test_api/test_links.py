@@ -29,6 +29,7 @@ app = create_app()
 # Use a fixed test workspace for link tests
 TEST_WORKSPACE_DIR = Path("./test_workspace_links")
 
+
 def get_test_db_url():
     """Generates the URL for the test database."""
     data_dir = TEST_WORKSPACE_DIR / ".novaport_data"
@@ -36,15 +37,15 @@ def get_test_db_url():
     db_path = data_dir.resolve() / "conport.db"
     return f"sqlite:///{db_path}"
 
+
 # Setup a test-specific database engine
-engine = create_engine(
-    get_test_db_url(), connect_args={"check_same_thread": False}
-)
+engine = create_engine(get_test_db_url(), connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Run the real Alembic migrations on the test database
 db_path = Path(get_test_db_url().replace("sqlite:///", ""))
 run_migrations_for_workspace(engine, db_path)
+
 
 def override_get_db():
     """Override the 'get_db' dependency for the tests."""
@@ -54,7 +55,9 @@ def override_get_db():
     finally:
         db.close()
 
+
 app.dependency_overrides[get_db] = override_get_db
+
 
 @pytest.fixture(scope="module")
 def client():
@@ -73,6 +76,7 @@ def client():
     # Use robust rmtree for cleanup
     robust_rmtree(TEST_WORKSPACE_DIR)
 
+
 @pytest.fixture
 def db_session():
     """Create a database session for direct database operations."""
@@ -82,9 +86,11 @@ def db_session():
     finally:
         db.close()
 
+
 def b64_encode(s: str) -> str:
     """Helper to encode paths for test URLs."""
     return base64.urlsafe_b64encode(s.encode()).decode()
+
 
 def create_test_items(db_session):
     """Helper function to create test items for linking."""
@@ -94,27 +100,22 @@ def create_test_items(db_session):
     # Create test decisions
     decision1 = models.Decision(
         summary="Use microservices architecture",
-        rationale="Better scalability and maintainability"
+        rationale="Better scalability and maintainability",
     )
     decision2 = models.Decision(
-        summary="Implement API gateway",
-        rationale="Centralized routing and security"
+        summary="Implement API gateway", rationale="Centralized routing and security"
     )
 
     # Create test progress entries
     progress1 = models.ProgressEntry(
-        status="IN_PROGRESS",
-        description="Design microservices architecture"
+        status="IN_PROGRESS", description="Design microservices architecture"
     )
-    progress2 = models.ProgressEntry(
-        status="TODO",
-        description="Set up API gateway"
-    )
+    progress2 = models.ProgressEntry(status="TODO", description="Set up API gateway")
 
     # Create test system patterns with unique names
     pattern1 = models.SystemPattern(
         name=f"Service Discovery Pattern {timestamp}",
-        description="Pattern for service registration and discovery"
+        description="Pattern for service registration and discovery",
     )
 
     db_session.add_all([decision1, decision2, progress1, progress2, pattern1])
@@ -123,7 +124,7 @@ def create_test_items(db_session):
     return {
         "decisions": [decision1, decision2],
         "progress": [progress1, progress2],
-        "patterns": [pattern1]
+        "patterns": [pattern1],
     }
 
 
@@ -160,13 +161,10 @@ class TestLinkCreation:
             "target_item_type": "progress",
             "target_item_id": str(progress.id),
             "relationship_type": "implements",
-            "description": "This progress entry implements the decision"
+            "description": "This progress entry implements the decision",
         }
 
-        response = client.post(
-            f"/workspaces/{workspace_b64}/links/",
-            json=link_data
-        )
+        response = client.post(f"/workspaces/{workspace_b64}/links/", json=link_data)
 
         assert response.status_code == 201
         created_link = response.json()
@@ -194,13 +192,10 @@ class TestLinkCreation:
             "source_item_id": str(decision.id),
             "target_item_type": "system_pattern",
             "target_item_id": str(pattern.id),
-            "relationship_type": "uses"
+            "relationship_type": "uses",
         }
 
-        response = client.post(
-            f"/workspaces/{workspace_b64}/links/",
-            json=link_data
-        )
+        response = client.post(f"/workspaces/{workspace_b64}/links/", json=link_data)
 
         assert response.status_code == 201
         created_link = response.json()
@@ -224,13 +219,10 @@ class TestLinkCreation:
             "target_item_type": "decision",
             "target_item_id": str(decision2.id),
             "relationship_type": "depends_on",
-            "description": "Decision 1 depends on Decision 2"
+            "description": "Decision 1 depends on Decision 2",
         }
 
-        response1 = client.post(
-            f"/workspaces/{workspace_b64}/links/",
-            json=link_data_1
-        )
+        response1 = client.post(f"/workspaces/{workspace_b64}/links/", json=link_data_1)
         assert response1.status_code == 201
 
         # Create reverse link from decision2 to decision1
@@ -240,13 +232,10 @@ class TestLinkCreation:
             "target_item_type": "decision",
             "target_item_id": str(decision1.id),
             "relationship_type": "enables",
-            "description": "Decision 2 enables Decision 1"
+            "description": "Decision 2 enables Decision 1",
         }
 
-        response2 = client.post(
-            f"/workspaces/{workspace_b64}/links/",
-            json=link_data_2
-        )
+        response2 = client.post(f"/workspaces/{workspace_b64}/links/", json=link_data_2)
         assert response2.status_code == 201
 
         # Verify both links exist
@@ -272,7 +261,7 @@ class TestLinkCreation:
             target_item_type="progress",
             target_item_id=str(progress.id),
             relationship_type="guides",
-            description="Decision guides progress implementation"
+            description="Decision guides progress implementation",
         )
 
         created_link = link_service.create(db_session, link_data)
@@ -320,15 +309,15 @@ class TestLinkRetrieval:
                 "source_item_id": str(decision.id),
                 "target_item_type": "progress",
                 "target_item_id": str(progress1.id),
-                "relationship_type": "implements"
+                "relationship_type": "implements",
             },
             {
                 "source_item_type": "progress",
                 "source_item_id": str(progress2.id),
                 "target_item_type": "decision",
                 "target_item_id": str(decision.id),
-                "relationship_type": "references"
-            }
+                "relationship_type": "references",
+            },
         ]
 
         # Create the links
@@ -371,9 +360,7 @@ class TestLinkRetrieval:
         workspace_path = str(TEST_WORKSPACE_DIR.resolve())
         workspace_b64 = b64_encode(workspace_path)
 
-        response = client.get(
-            f"/workspaces/{workspace_b64}/links/decision/99999"
-        )
+        response = client.get(f"/workspaces/{workspace_b64}/links/decision/99999")
 
         assert response.status_code == 200
         links = response.json()
@@ -394,7 +381,7 @@ class TestLinkRetrieval:
             source_item_id=str(decision.id),
             target_item_type="progress",
             target_item_id=str(progress.id),
-            relationship_type="directs"
+            relationship_type="directs",
         )
         link_service.create(db_session, link_data)
 
@@ -440,8 +427,15 @@ class TestLinkRelationshipTypes:
         pattern = test_items["patterns"][0]
 
         relationship_types = [
-            "implements", "depends_on", "enables", "uses", "references",
-            "conflicts_with", "supersedes", "validates", "complements"
+            "implements",
+            "depends_on",
+            "enables",
+            "uses",
+            "references",
+            "conflicts_with",
+            "supersedes",
+            "validates",
+            "complements",
         ]
 
         # Create links with different relationship types
@@ -465,12 +459,11 @@ class TestLinkRelationshipTypes:
                 "target_item_type": target_type,
                 "target_item_id": target_id,
                 "relationship_type": rel_type,
-                "description": f"Test {rel_type} relationship"
+                "description": f"Test {rel_type} relationship",
             }
 
             response = client.post(
-                f"/workspaces/{workspace_b64}/links/",
-                json=link_data
+                f"/workspaces/{workspace_b64}/links/", json=link_data
             )
             assert response.status_code == 201
 
@@ -497,13 +490,10 @@ class TestLinkRelationshipTypes:
             "target_item_type": "decision",
             "target_item_id": str(decision.id),
             "relationship_type": "references",
-            "description": "Self-referential relationship for versioning"
+            "description": "Self-referential relationship for versioning",
         }
 
-        response = client.post(
-            f"/workspaces/{workspace_b64}/links/",
-            json=link_data
-        )
+        response = client.post(f"/workspaces/{workspace_b64}/links/", json=link_data)
 
         assert response.status_code == 201
         created_link = response.json()
@@ -528,12 +518,11 @@ class TestLinkRelationshipTypes:
                 "target_item_type": "progress",
                 "target_item_id": str(progress.id),
                 "relationship_type": rel_type,
-                "description": f"Decision {rel_type} progress"
+                "description": f"Decision {rel_type} progress",
             }
 
             response = client.post(
-                f"/workspaces/{workspace_b64}/links/",
-                json=link_data
+                f"/workspaces/{workspace_b64}/links/", json=link_data
             )
             assert response.status_code == 201
 
@@ -559,12 +548,11 @@ class TestLinkErrorHandling:
             "source_item_id": "1",
             "target_item_type": "progress",
             "target_item_id": "2",
-            "relationship_type": "implements"
+            "relationship_type": "implements",
         }
 
         response = client.post(
-            f"/workspaces/{workspace_b64}/links/",
-            json=incomplete_link
+            f"/workspaces/{workspace_b64}/links/", json=incomplete_link
         )
 
         assert response.status_code == 422  # Validation error
@@ -584,13 +572,10 @@ class TestLinkErrorHandling:
             "target_item_type": "progress",
             "target_item_id": str(progress.id),
             "relationship_type": "",  # Empty relationship type
-            "description": "Empty relationship type test"
+            "description": "Empty relationship type test",
         }
 
-        response = client.post(
-            f"/workspaces/{workspace_b64}/links/",
-            json=link_data
-        )
+        response = client.post(f"/workspaces/{workspace_b64}/links/", json=link_data)
 
         assert response.status_code == 422  # Validation error
 
@@ -605,8 +590,7 @@ class TestLinkErrorHandling:
         # Create many links to test limit (default is 50)
         for i in range(10):  # Create 10 links
             progress = models.ProgressEntry(
-                status="TODO",
-                description=f"Test progress {i}"
+                status="TODO", description=f"Test progress {i}"
             )
             db_session.add(progress)
             db_session.commit()
@@ -616,7 +600,7 @@ class TestLinkErrorHandling:
                 "source_item_id": str(decision.id),
                 "target_item_type": "progress",
                 "target_item_id": str(progress.id),
-                "relationship_type": "implements"
+                "relationship_type": "implements",
             }
 
             client.post(f"/workspaces/{workspace_b64}/links/", json=link_data)
@@ -647,13 +631,10 @@ class TestLinkErrorHandling:
             "target_item_type": "progress",
             "target_item_id": str(progress.id),
             "relationship_type": "implements",
-            "description": long_description
+            "description": long_description,
         }
 
-        response = client.post(
-            f"/workspaces/{workspace_b64}/links/",
-            json=link_data
-        )
+        response = client.post(f"/workspaces/{workspace_b64}/links/", json=link_data)
 
         assert response.status_code == 201
         created_link = response.json()
@@ -668,7 +649,9 @@ class TestLinkErrorHandling:
         decision = test_items["decisions"][0]
         progress = test_items["progress"][0]
 
-        special_description = "Special chars: äöü ñ 中文 🚀 <tag> & \"quotes\" 'apostrophes'"
+        special_description = (
+            "Special chars: äöü ñ 中文 🚀 <tag> & \"quotes\" 'apostrophes'"
+        )
 
         link_data = {
             "source_item_type": "decision",
@@ -676,13 +659,10 @@ class TestLinkErrorHandling:
             "target_item_type": "progress",
             "target_item_id": str(progress.id),
             "relationship_type": "implements",
-            "description": special_description
+            "description": special_description,
         }
 
-        response = client.post(
-            f"/workspaces/{workspace_b64}/links/",
-            json=link_data
-        )
+        response = client.post(f"/workspaces/{workspace_b64}/links/", json=link_data)
 
         assert response.status_code == 201
         created_link = response.json()

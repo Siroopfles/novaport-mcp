@@ -18,6 +18,7 @@ app = create_app()
 # Use a fixed test-workspace for meta tests.
 TEST_WORKSPACE_DIR = Path("./test_workspace_meta_extended")
 
+
 def get_test_db_url():
     """Generates the URL for the test database."""
     data_dir = TEST_WORKSPACE_DIR / ".novaport_data"
@@ -25,15 +26,15 @@ def get_test_db_url():
     db_path = data_dir.resolve() / "conport.db"
     return f"sqlite:///{db_path}"
 
+
 # Setup a test-specific database engine
-engine = create_engine(
-    get_test_db_url(), connect_args={"check_same_thread": False}
-)
+engine = create_engine(get_test_db_url(), connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Run the real Alembic migrations on the test database
 db_path = Path(get_test_db_url().replace("sqlite:///", ""))
 run_migrations_for_workspace(engine, db_path)
+
 
 def override_get_db():
     """Override the 'get_db' dependency for the tests."""
@@ -43,7 +44,9 @@ def override_get_db():
     finally:
         db.close()
 
+
 app.dependency_overrides[get_db] = override_get_db
+
 
 @pytest.fixture(scope="module")
 def client():
@@ -62,6 +65,7 @@ def client():
     # Use robust rmtree for cleanup
     robust_rmtree(TEST_WORKSPACE_DIR)
 
+
 @pytest.fixture
 def db_session():
     """Create a database session for direct database operations."""
@@ -71,9 +75,11 @@ def db_session():
     finally:
         db.close()
 
+
 def b64_encode(s: str) -> str:
     """Helper to encode paths for test URLs."""
     return base64.urlsafe_b64encode(s.encode()).decode()
+
 
 def create_test_data(db_session, test_suffix=""):
     """Helper function to create test data."""
@@ -81,34 +87,32 @@ def create_test_data(db_session, test_suffix=""):
     decision1 = models.Decision(
         summary=f"Use Python for backend{test_suffix}",
         rationale="Python has excellent ecosystem",
-        tags=["backend", "technology"]
+        tags=["backend", "technology"],
     )
     decision2 = models.Decision(
         summary=f"Use PostgreSQL for database{test_suffix}",
         rationale="ACID compliance and performance",
-        tags=["database", "technology"]
+        tags=["database", "technology"],
     )
 
     # Create test progress entries
     progress1 = models.ProgressEntry(
-        status="IN_PROGRESS",
-        description=f"Implement user authentication{test_suffix}"
+        status="IN_PROGRESS", description=f"Implement user authentication{test_suffix}"
     )
     progress2 = models.ProgressEntry(
-        status="DONE",
-        description=f"Setup project structure{test_suffix}"
+        status="DONE", description=f"Setup project structure{test_suffix}"
     )
 
     # Create test system patterns with unique names
     pattern1 = models.SystemPattern(
         name=f"Repository Pattern{test_suffix}",
         description="Data access abstraction pattern",
-        tags=["architecture", "pattern"]
+        tags=["architecture", "pattern"],
     )
     pattern2 = models.SystemPattern(
         name=f"MVC Pattern{test_suffix}",
         description="Model-View-Controller architectural pattern",
-        tags=["architecture", "pattern"]
+        tags=["architecture", "pattern"],
     )
 
     db_session.add_all([decision1, decision2, progress1, progress2, pattern1, pattern2])
@@ -117,7 +121,7 @@ def create_test_data(db_session, test_suffix=""):
     return {
         "decisions": [decision1, decision2],
         "progress": [progress1, progress2],
-        "patterns": [pattern1, pattern2]
+        "patterns": [pattern1, pattern2],
     }
 
 
@@ -265,22 +269,15 @@ class TestMetaServiceFunctions:
         from conport.services import meta_service
 
         items = [
-            {
-                "summary": "Decision 1",
-                "rationale": "Rationale 1",
-                "tags": ["test"]
-            },
-            {
-                "summary": "Decision 2",
-                "rationale": "Rationale 2"
-            }
+            {"summary": "Decision 1", "rationale": "Rationale 1", "tags": ["test"]},
+            {"summary": "Decision 2", "rationale": "Rationale 2"},
         ]
 
         result = meta_service.batch_log_items(
             db=db_session,
             workspace_id="test_workspace",
             item_type="decision",
-            items=items
+            items=items,
         )
 
         assert result["succeeded"] == 2
@@ -298,7 +295,7 @@ class TestMetaServiceFunctions:
                 db=db_session,
                 workspace_id="test_workspace",
                 item_type="invalid_type",
-                items=items
+                items=items,
             )
 
         assert "Invalid item_type for batch operation" in str(exc_info.value)
@@ -311,18 +308,18 @@ class TestMetaServiceFunctions:
         items = [
             {"summary": "Valid decision"},  # Valid decision
             {"rationale": "Missing summary"},  # Invalid decision - no summary
-            {}  # Completely empty item
+            {},  # Completely empty item
         ]
 
         result = meta_service.batch_log_items(
             db=db_session,
             workspace_id="test_workspace",
             item_type="decision",
-            items=items
+            items=items,
         )
 
         assert result["succeeded"] == 1  # Only the first should succeed
-        assert result["failed"] == 2    # The other two fail
+        assert result["failed"] == 2  # The other two fail
         assert len(result["details"]) == 2  # Error details for the failed items
 
     def test_batch_log_items_progress(self, db_session):
@@ -330,21 +327,15 @@ class TestMetaServiceFunctions:
         from conport.services import meta_service
 
         items = [
-            {
-                "status": "TODO",
-                "description": "Task 1"
-            },
-            {
-                "status": "IN_PROGRESS",
-                "description": "Task 2"
-            }
+            {"status": "TODO", "description": "Task 1"},
+            {"status": "IN_PROGRESS", "description": "Task 2"},
         ]
 
         result = meta_service.batch_log_items(
             db=db_session,
             workspace_id="test_workspace",
             item_type="progress",
-            items=items
+            items=items,
         )
 
         assert result["succeeded"] == 2
@@ -365,6 +356,8 @@ class TestMetaServiceFunctions:
         # Database is empty after setup_method
         assert len(result["decisions"]) == 0
         assert len(result["progress"]) == 0
+
+
 class TestTimestampFiltering:
     """Test class for timestamp filtering functionality in get_recent_activity."""
 
@@ -393,28 +386,28 @@ class TestTimestampFiltering:
 
         # Create decisions with different timestamps
         old_decision = models.Decision(
-            summary="Old decision",
-            rationale="This is old",
-            timestamp=four_hours_ago
+            summary="Old decision", rationale="This is old", timestamp=four_hours_ago
         )
         recent_decision = models.Decision(
-            summary="Recent decision",
-            rationale="This is recent",
-            timestamp=now
+            summary="Recent decision", rationale="This is recent", timestamp=now
         )
 
         db_session.add_all([old_decision, recent_decision])
         db_session.commit()
 
         # Test filtering with since parameter
-        result = meta_service.get_recent_activity(db_session, limit=10, since=two_hours_ago)
+        result = meta_service.get_recent_activity(
+            db_session, limit=10, since=two_hours_ago
+        )
 
         assert isinstance(result, dict)
         assert "decisions" in result
         assert len(result["decisions"]) == 1
         assert result["decisions"][0].summary == "Recent decision"
 
-    def test_get_recent_activity_with_since_endpoint(self, client: TestClient, db_session):
+    def test_get_recent_activity_with_since_endpoint(
+        self, client: TestClient, db_session
+    ):
         """Test get_recent_activity endpoint with since timestamp parameter."""
         import datetime
 
@@ -426,12 +419,10 @@ class TestTimestampFiltering:
         three_hours_ago = now - datetime.timedelta(hours=3)
 
         old_decision = models.Decision(
-            summary="Old decision for endpoint test",
-            timestamp=three_hours_ago
+            summary="Old decision for endpoint test", timestamp=three_hours_ago
         )
         recent_decision = models.Decision(
-            summary="Recent decision for endpoint test",
-            timestamp=now
+            summary="Recent decision for endpoint test", timestamp=now
         )
 
         db_session.add_all([old_decision, recent_decision])
@@ -443,16 +434,21 @@ class TestTimestampFiltering:
 
         response = client.get(
             f"/workspaces/{workspace_b64}/meta/recent-activity",
-            params={"since": since_param}
+            params={"since": since_param},
         )
 
         assert response.status_code == 200
         activity_data = response.json()
 
         assert len(activity_data["decisions"]) == 1
-        assert activity_data["decisions"][0]["summary"] == "Recent decision for endpoint test"
+        assert (
+            activity_data["decisions"][0]["summary"]
+            == "Recent decision for endpoint test"
+        )
 
-    def test_get_recent_activity_with_hours_ago_parameter(self, client: TestClient, db_session):
+    def test_get_recent_activity_with_hours_ago_parameter(
+        self, client: TestClient, db_session
+    ):
         """Test get_recent_activity endpoint with hours_ago parameter."""
         import datetime
 
@@ -464,14 +460,10 @@ class TestTimestampFiltering:
         five_hours_ago = now - datetime.timedelta(hours=5)
 
         old_progress = models.ProgressEntry(
-            status="DONE",
-            description="Old progress entry",
-            timestamp=five_hours_ago
+            status="DONE", description="Old progress entry", timestamp=five_hours_ago
         )
         recent_progress = models.ProgressEntry(
-            status="IN_PROGRESS",
-            description="Recent progress entry",
-            timestamp=now
+            status="IN_PROGRESS", description="Recent progress entry", timestamp=now
         )
 
         db_session.add_all([old_progress, recent_progress])
@@ -479,8 +471,7 @@ class TestTimestampFiltering:
 
         # Test with hours_ago=3 (should get only recent entry)
         response = client.get(
-            f"/workspaces/{workspace_b64}/meta/recent-activity",
-            params={"hours_ago": 3}
+            f"/workspaces/{workspace_b64}/meta/recent-activity", params={"hours_ago": 3}
         )
 
         assert response.status_code == 200
@@ -503,7 +494,7 @@ class TestTimestampFiltering:
         # Test with invalid timestamp format
         response = client.get(
             f"/workspaces/{workspace_b64}/meta/recent-activity",
-            params={"since": "invalid-timestamp"}
+            params={"since": "invalid-timestamp"},
         )
         # Should handle gracefully, possibly return 400 or ignore invalid parameter
         assert response.status_code in [200, 400]
@@ -512,7 +503,7 @@ class TestTimestampFiltering:
         future_time = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
         response = client.get(
             f"/workspaces/{workspace_b64}/meta/recent-activity",
-            params={"since": future_time.isoformat()}
+            params={"since": future_time.isoformat()},
         )
 
         assert response.status_code == 200
@@ -525,7 +516,7 @@ class TestTimestampFiltering:
         # Test with very large hours_ago value
         response = client.get(
             f"/workspaces/{workspace_b64}/meta/recent-activity",
-            params={"hours_ago": 999999}
+            params={"hours_ago": 999999},
         )
 
         assert response.status_code == 200
@@ -536,12 +527,14 @@ class TestTimestampFiltering:
         # Test with negative hours_ago
         response = client.get(
             f"/workspaces/{workspace_b64}/meta/recent-activity",
-            params={"hours_ago": -1}
+            params={"hours_ago": -1},
         )
         # Should handle gracefully
         assert response.status_code in [200, 400]
 
-    def test_get_recent_activity_combination_parameters(self, client: TestClient, db_session):
+    def test_get_recent_activity_combination_parameters(
+        self, client: TestClient, db_session
+    ):
         """Test combination of both since_timestamp and hours_ago parameters."""
         import datetime
 
@@ -556,17 +549,15 @@ class TestTimestampFiltering:
         pattern1 = models.SystemPattern(
             name="Old Pattern",
             description="Created 6 hours ago",
-            timestamp=six_hours_ago
+            timestamp=six_hours_ago,
         )
         pattern2 = models.SystemPattern(
             name="Recent Pattern",
             description="Created 2 hours ago",
-            timestamp=two_hours_ago
+            timestamp=two_hours_ago,
         )
         pattern3 = models.SystemPattern(
-            name="Very Recent Pattern",
-            description="Created now",
-            timestamp=now
+            name="Very Recent Pattern", description="Created now", timestamp=now
         )
 
         db_session.add_all([pattern1, pattern2, pattern3])
@@ -578,8 +569,8 @@ class TestTimestampFiltering:
             f"/workspaces/{workspace_b64}/meta/recent-activity",
             params={
                 "since": three_hours_ago.isoformat(),
-                "hours_ago": 1  # This would normally only get the very recent one
-            }
+                "hours_ago": 1,  # This would normally only get the very recent one
+            },
         )
 
         assert response.status_code == 200
@@ -603,44 +594,35 @@ class TestTimestampFiltering:
         old_time = now - datetime.timedelta(hours=4)
 
         # Create items of different types with timestamps before and after cutoff
-        old_decision = models.Decision(
-            summary="Old decision",
-            timestamp=old_time
-        )
-        recent_decision = models.Decision(
-            summary="Recent decision",
-            timestamp=now
-        )
+        old_decision = models.Decision(summary="Old decision", timestamp=old_time)
+        recent_decision = models.Decision(summary="Recent decision", timestamp=now)
 
         old_progress = models.ProgressEntry(
-            status="DONE",
-            description="Old progress",
-            timestamp=old_time
+            status="DONE", description="Old progress", timestamp=old_time
         )
         recent_progress = models.ProgressEntry(
-            status="IN_PROGRESS",
-            description="Recent progress",
-            timestamp=now
+            status="IN_PROGRESS", description="Recent progress", timestamp=now
         )
 
-        old_pattern = models.SystemPattern(
-            name="Old Pattern",
-            timestamp=old_time
-        )
-        recent_pattern = models.SystemPattern(
-            name="Recent Pattern",
-            timestamp=now
-        )
+        old_pattern = models.SystemPattern(name="Old Pattern", timestamp=old_time)
+        recent_pattern = models.SystemPattern(name="Recent Pattern", timestamp=now)
 
-        db_session.add_all([
-            old_decision, recent_decision,
-            old_progress, recent_progress,
-            old_pattern, recent_pattern
-        ])
+        db_session.add_all(
+            [
+                old_decision,
+                recent_decision,
+                old_progress,
+                recent_progress,
+                old_pattern,
+                recent_pattern,
+            ]
+        )
         db_session.commit()
 
         # Test filtering with since parameter
-        result = meta_service.get_recent_activity(db_session, limit=10, since=cutoff_time)
+        result = meta_service.get_recent_activity(
+            db_session, limit=10, since=cutoff_time
+        )
 
         # Should only get recent items
         assert len(result["decisions"]) == 1
@@ -664,22 +646,21 @@ class TestTimestampFiltering:
         # Create items exactly at the cutoff time and just before/after
         before_cutoff = models.Decision(
             summary="Before cutoff",
-            timestamp=exact_cutoff - datetime.timedelta(seconds=1)
+            timestamp=exact_cutoff - datetime.timedelta(seconds=1),
         )
-        at_cutoff = models.Decision(
-            summary="At cutoff",
-            timestamp=exact_cutoff
-        )
+        at_cutoff = models.Decision(summary="At cutoff", timestamp=exact_cutoff)
         after_cutoff = models.Decision(
             summary="After cutoff",
-            timestamp=exact_cutoff + datetime.timedelta(seconds=1)
+            timestamp=exact_cutoff + datetime.timedelta(seconds=1),
         )
 
         db_session.add_all([before_cutoff, at_cutoff, after_cutoff])
         db_session.commit()
 
         # Test with exact cutoff time
-        result = meta_service.get_recent_activity(db_session, limit=10, since=exact_cutoff)
+        result = meta_service.get_recent_activity(
+            db_session, limit=10, since=exact_cutoff
+        )
 
         # Should include items at or after cutoff time
         assert len(result["decisions"]) == 2
@@ -702,7 +683,7 @@ class TestTimestampFiltering:
         for i in range(10):
             decision = models.Decision(
                 summary=f"Recent decision {i}",
-                timestamp=now - datetime.timedelta(minutes=i)
+                timestamp=now - datetime.timedelta(minutes=i),
             )
             recent_decisions.append(decision)
 
@@ -710,7 +691,9 @@ class TestTimestampFiltering:
         db_session.commit()
 
         # Test with both since parameter and small limit
-        result = meta_service.get_recent_activity(db_session, limit=3, since=cutoff_time)
+        result = meta_service.get_recent_activity(
+            db_session, limit=3, since=cutoff_time
+        )
 
         # Should respect both filters
         assert len(result["decisions"]) == 3  # Limited by limit parameter

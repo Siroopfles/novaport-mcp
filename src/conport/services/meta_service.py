@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, cast
 
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -22,28 +22,32 @@ def get_recent_activity(
     return {
         "decisions": decision_service.get_multi(db, limit=limit, since=since),
         "progress": progress_service.get_multi(db, limit=limit, since=since),
-        "system_patterns": system_pattern_service.get_multi(db, limit=limit, since=since)
+        "system_patterns": system_pattern_service.get_multi(
+            db, limit=limit, since=since
+        ),
     }
 
+
 def batch_log_items(
-    db: Session,
-    workspace_id: str,
-    item_type: str,
-    items: List[Dict[str, Any]]
+    db: Session, workspace_id: str, item_type: str, items: List[Dict[str, Any]]
 ) -> Dict[str, Any]:
     # Define the service function, the Pydantic schema, and the correct keyword argument name
     service_map = {
         "decision": (decision_service.create, DecisionCreate, "decision"),
         "progress": (progress_service.create, ProgressEntryCreate, "entry"),
-        "system_pattern": (system_pattern_service.create, SystemPatternCreate, "pattern"),
-        "custom_data": (custom_data_service.upsert, CustomDataCreate, "data")
+        "system_pattern": (
+            system_pattern_service.create,
+            SystemPatternCreate,
+            "pattern",
+        ),
+        "custom_data": (custom_data_service.upsert, CustomDataCreate, "data"),
     }
 
     if item_type not in service_map:
         raise ValueError(f"Invalid item_type for batch operation: {item_type}")
 
-    service_func: Callable[..., Any]
     service_func, schema, param_name = service_map[item_type]
+    service_func = cast(Callable[..., Any], service_func)
     success_count, errors = 0, []
 
     for item_data in items:
@@ -51,16 +55,16 @@ def batch_log_items(
             validated_item = schema(**item_data)
 
             kwargs = {
-                'db': db,
-                'workspace_id': workspace_id,
-                param_name: validated_item
+                "db": db,
+                "workspace_id": workspace_id,
+                param_name: validated_item,
             }
 
             # Progress has a special signature that we must respect
             if item_type == "progress":
-                kwargs['linked_item_type'] = None
-                kwargs['linked_item_id'] = None
-                kwargs['link_relationship_type'] = "relates_to_progress"
+                kwargs["linked_item_type"] = None
+                kwargs["linked_item_id"] = None
+                kwargs["link_relationship_type"] = "relates_to_progress"
 
             service_func(**kwargs)
 

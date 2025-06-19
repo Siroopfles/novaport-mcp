@@ -5,12 +5,10 @@ from sqlalchemy.orm import Session
 from ..db import models
 from ..schemas import context as context_schema
 
-ContextModel = TypeVar('ContextModel', models.ProductContext, models.ActiveContext)
+ContextModel = TypeVar("ContextModel", models.ProductContext, models.ActiveContext)
 
-def _get_or_create(
-    db: Session,
-    model: Type[ContextModel]
-) -> ContextModel:
+
+def _get_or_create(db: Session, model: Type[ContextModel]) -> ContextModel:
     """Helper function to retrieve or create a context record with default content."""
     instance = db.query(model).filter_by(id=1).first()
     if not instance:
@@ -20,18 +18,21 @@ def _get_or_create(
         db.refresh(instance)
     return instance
 
+
 def get_product_context(db: Session) -> models.ProductContext:
     """Retrieve the product context, creates it if it doesn't exist yet."""
     return _get_or_create(db, models.ProductContext)
+
 
 def get_active_context(db: Session) -> models.ActiveContext:
     """Retrieve the active context, creates it if it doesn't exist yet."""
     return _get_or_create(db, models.ActiveContext)
 
+
 def update_context(
     db: Session,
     instance: Union[models.ProductContext, models.ActiveContext],
-    update_data: context_schema.ContextUpdate
+    update_data: context_schema.ContextUpdate,
 ) -> Union[models.ProductContext, models.ActiveContext]:
     """Update context with full content or patch-based updates."""
     current_content = cast(Dict[str, Any], instance.content) or {}

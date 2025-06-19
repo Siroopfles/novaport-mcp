@@ -11,13 +11,17 @@ class LinkBase(BaseModel):
     source_item_id: str
     target_item_type: str
     target_item_id: str
-    relationship_type: str = Field(..., min_length=1, description="The type of relationship between items")
+    relationship_type: str = Field(
+        ..., min_length=1, description="The type of relationship between items"
+    )
     description: Optional[str] = None
+
 
 class LinkCreate(LinkBase):
     """Represent link data for creation operations."""
 
     pass
+
 
 class LinkRead(LinkBase):
     """Represent link data for read operations."""

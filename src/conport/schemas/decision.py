@@ -12,10 +12,12 @@ class DecisionBase(BaseModel):
     implementation_details: Optional[str] = None
     tags: Optional[List[str]] = []
 
+
 class DecisionCreate(DecisionBase):
     """Represent decision data for creation operations."""
 
     pass
+
 
 class DecisionRead(DecisionBase):
     """Represent decision data for read operations."""

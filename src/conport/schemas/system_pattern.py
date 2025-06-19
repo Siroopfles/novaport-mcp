@@ -11,10 +11,12 @@ class SystemPatternBase(BaseModel):
     description: Optional[str] = None
     tags: Optional[List[str]] = []
 
+
 class SystemPatternCreate(SystemPatternBase):
     """Represent system pattern data for creation operations."""
 
     pass
+
 
 class SystemPatternRead(SystemPatternBase):
     """Represent system pattern data for read operations."""
