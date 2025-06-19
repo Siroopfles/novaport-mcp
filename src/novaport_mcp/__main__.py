@@ -3,7 +3,7 @@ import typer
 from .main import mcp_server
 
 cli = typer.Typer(
-    name="conport",
+    name="novaport",
     help="NovaPort MCP: A robust, multi-workspace context server for AI assistants.",
     add_completion=False,
 )
