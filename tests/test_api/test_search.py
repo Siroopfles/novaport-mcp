@@ -5,9 +5,9 @@ import time
 from pathlib import Path
 
 import pytest
-from conport.app_factory import create_app
-from conport.db.database import get_db, run_migrations_for_workspace
-from conport.services import vector_service
+from novaport_mcp.app_factory import create_app
+from novaport_mcp.db.database import get_db, run_migrations_for_workspace
+from novaport_mcp.services import vector_service
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

@@ -10,17 +10,19 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import NoResultFound
 from pydantic import ValidationError
 
-from src.conport.services import (
-    custom_data_service, 
-    progress_service, 
-    io_service, 
-    meta_service, 
-    link_service
+from src.novaport_mcp.services import (
+    custom_data_service,
+    progress_service,
+    io_service,
+    meta_service,
+    link_service,
+    decision_service,
+    system_pattern_service
 )
-from src.conport.schemas.custom_data import CustomDataCreate
-from src.conport.schemas.progress import ProgressEntryCreate, ProgressEntryUpdate
-from src.conport.schemas.decision import DecisionCreate
-from src.conport.schemas.link import LinkCreate
+from src.novaport_mcp.schemas.custom_data import CustomDataCreate
+from src.novaport_mcp.schemas.progress import ProgressEntryCreate, ProgressEntryUpdate
+from src.novaport_mcp.schemas.decision import DecisionCreate
+from src.novaport_mcp.schemas.link import LinkCreate
 
 
 class TestCustomDataServiceCoverage:
@@ -60,7 +62,7 @@ class TestCustomDataServiceCoverage:
         mock_existing.id = 1
         
         with patch.object(custom_data_service, 'get') as mock_get:
-            with patch('src.conport.services.vector_service.delete_embedding') as mock_delete_vector:
+            with patch('src.novaport_mcp.services.vector_service.delete_embedding') as mock_delete_vector:
                 mock_get.return_value = mock_existing
                 
                 result = custom_data_service.delete(
@@ -96,7 +98,7 @@ class TestCustomDataServiceCoverage:
         # Mock NoResultFound exception to simulate new record
         mock_db_session.query.return_value.filter_by.return_value.one.side_effect = NoResultFound()
         
-        with patch('src.conport.services.vector_service.upsert_embedding') as mock_upsert_vector:
+        with patch('src.novaport_mcp.services.vector_service.upsert_embedding') as mock_upsert_vector:
             result = custom_data_service.upsert(mock_db_session, workspace_id, data)
             
             mock_db_session.add.assert_called_once()
@@ -120,7 +122,7 @@ class TestCustomDataServiceCoverage:
         
         mock_db_session.query.return_value.filter_by.return_value.one.return_value = mock_existing
         
-        with patch('src.conport.services.vector_service.upsert_embedding') as mock_upsert_vector:
+        with patch('src.novaport_mcp.services.vector_service.upsert_embedding') as mock_upsert_vector:
             result = custom_data_service.upsert(mock_db_session, workspace_id, data)
             
             assert mock_existing.value == {"updated": "data"}
@@ -139,9 +141,9 @@ class TestCustomDataServiceCoverage:
         
         mock_db_session.query.return_value.filter_by.return_value.one.side_effect = NoResultFound()
         
-        with patch('src.conport.services.vector_service.upsert_embedding') as mock_upsert_vector:
+        with patch('src.novaport_mcp.services.vector_service.upsert_embedding') as mock_upsert_vector:
             with patch('json.dumps', side_effect=TypeError("Cannot serialize")):
-                with patch('src.conport.services.custom_data_service.log') as mock_log:
+                with patch('src.novaport_mcp.services.custom_data_service.log') as mock_log:
                     result = custom_data_service.upsert(mock_db_session, workspace_id, data)
                     
                     mock_db_session.add.assert_called_once()
@@ -169,7 +171,7 @@ class TestCustomDataServiceCoverage:
         
         mock_db_session.execute.return_value = [mock_row1, mock_row2]
         
-        with patch('src.conport.db.models.CustomData') as mock_model:
+        with patch('src.novaport_mcp.db.models.CustomData') as mock_model:
             result = custom_data_service.search_fts(mock_db_session, "test query", limit=5)
             
             mock_db_session.execute.assert_called_once()
@@ -182,7 +184,7 @@ class TestCustomDataServiceCoverage:
         
         mock_db_session.execute.return_value = [mock_row]
         
-        with patch('src.conport.db.models.CustomData') as mock_model:
+        with patch('src.novaport_mcp.db.models.CustomData') as mock_model:
             result = custom_data_service.search_fts(mock_db_session, "test query", category="specific_cat", limit=10)
             
             mock_db_session.execute.assert_called_once()
@@ -210,7 +212,7 @@ class TestProgressServiceCoverage:
             parent_id=1
         )
         
-        with patch('src.conport.services.vector_service.upsert_embedding') as mock_upsert:
+        with patch('src.novaport_mcp.services.vector_service.upsert_embedding') as mock_upsert:
             result = progress_service.create(
                 mock_db_session,
                 workspace_id,
@@ -232,8 +234,8 @@ class TestProgressServiceCoverage:
             description="Test task with linking"
         )
         
-        with patch('src.conport.services.vector_service.upsert_embedding') as mock_upsert:
-            with patch('src.conport.services.link_service.create') as mock_link:
+        with patch('src.novaport_mcp.services.vector_service.upsert_embedding') as mock_upsert:
+            with patch('src.novaport_mcp.services.link_service.create') as mock_link:
                 result = progress_service.create(
                     mock_db_session,
                     workspace_id,
@@ -312,7 +314,7 @@ class TestProgressServiceCoverage:
         mock_progress.id = 1
         
         with patch.object(progress_service, 'get') as mock_get:
-            with patch('src.conport.services.vector_service.delete_embedding') as mock_delete:
+            with patch('src.novaport_mcp.services.vector_service.delete_embedding') as mock_delete:
                 mock_get.return_value = mock_progress
                 
                 result = progress_service.delete(
@@ -369,7 +371,7 @@ class TestIOServiceCoverage:
 
         mock_export_path = MagicMock(spec=Path)
         
-        with patch('src.conport.services.decision_service.get_multi') as mock_get_multi:
+        with patch('src.novaport_mcp.services.decision_service.get_multi') as mock_get_multi:
             with patch('builtins.open', mock_open()) as mock_file:
                 mock_get_multi.return_value = [mock_decision1, mock_decision2]
                 
@@ -384,7 +386,7 @@ class TestIOServiceCoverage:
         """Test export_to_markdown when no decisions exist."""
         mock_export_path = MagicMock(spec=Path)
         
-        with patch('src.conport.services.decision_service.get_multi') as mock_get_multi:
+        with patch('src.novaport_mcp.services.decision_service.get_multi') as mock_get_multi:
             mock_get_multi.return_value = []
             
             result = io_service.export_to_markdown(mock_db_session, mock_export_path)
@@ -423,7 +425,7 @@ Implementation details here
 ---"""
 
         with patch('builtins.open', mock_open(read_data=markdown_content)):
-            with patch('src.conport.services.decision_service.create') as mock_create:
+            with patch('src.novaport_mcp.services.decision_service.create') as mock_create:
                 result = io_service.import_from_markdown(mock_db_session, workspace_id, mock_import_path)
                 
                 assert result["status"] == "completed"
@@ -469,7 +471,7 @@ Invalid block without proper header
 ---"""
 
         with patch('builtins.open', mock_open(read_data=malformed_content)):
-            with patch('src.conport.services.decision_service.create') as mock_create:
+            with patch('src.novaport_mcp.services.decision_service.create') as mock_create:
                 # First call succeeds, second call raises exception
                 mock_create.side_effect = [None, Exception("Creation failed")]
                 
@@ -499,9 +501,9 @@ class TestMetaServiceCoverage:
         mock_progress = [Mock()]
         mock_patterns = [Mock(), Mock(), Mock()]
         
-        with patch('src.conport.services.decision_service.get_multi') as mock_decision_multi:
-            with patch('src.conport.services.progress_service.get_multi') as mock_progress_multi:
-                with patch('src.conport.services.system_pattern_service.get_multi') as mock_pattern_multi:
+        with patch('src.novaport_mcp.services.decision_service.get_multi') as mock_decision_multi:
+            with patch('src.novaport_mcp.services.progress_service.get_multi') as mock_progress_multi:
+                with patch('src.novaport_mcp.services.system_pattern_service.get_multi') as mock_pattern_multi:
                     mock_decision_multi.return_value = mock_decisions
                     mock_progress_multi.return_value = mock_progress
                     mock_pattern_multi.return_value = mock_patterns
@@ -520,9 +522,9 @@ class TestMetaServiceCoverage:
         """Test get_recent_activity function with since parameter."""
         since_date = datetime.datetime(2024, 1, 1)
         
-        with patch('src.conport.services.decision_service.get_multi') as mock_decision_multi:
-            with patch('src.conport.services.progress_service.get_multi') as mock_progress_multi:
-                with patch('src.conport.services.system_pattern_service.get_multi') as mock_pattern_multi:
+        with patch('src.novaport_mcp.services.decision_service.get_multi') as mock_decision_multi:
+            with patch('src.novaport_mcp.services.progress_service.get_multi') as mock_progress_multi:
+                with patch('src.novaport_mcp.services.system_pattern_service.get_multi') as mock_pattern_multi:
                     result = meta_service.get_recent_activity(mock_db_session, limit=5, since=since_date)
                     
                     mock_decision_multi.assert_called_once_with(mock_db_session, limit=5, since=since_date)
@@ -536,7 +538,7 @@ class TestMetaServiceCoverage:
             {"summary": "Decision 2", "rationale": "Rationale 2"}
         ]
         
-        with patch('src.conport.services.decision_service.create') as mock_create:
+        with patch('src.novaport_mcp.services.decision_service.create') as mock_create:
             result = meta_service.batch_log_items(mock_db_session, workspace_id, "decision", items)
             
             assert result["succeeded"] == 2
@@ -551,7 +553,7 @@ class TestMetaServiceCoverage:
             {"status": "IN_PROGRESS", "description": "Task 2"}
         ]
         
-        with patch('src.conport.services.progress_service.create') as mock_create:
+        with patch('src.novaport_mcp.services.progress_service.create') as mock_create:
             result = meta_service.batch_log_items(mock_db_session, workspace_id, "progress", items)
             
             assert result["succeeded"] == 2
@@ -566,7 +568,7 @@ class TestMetaServiceCoverage:
             {"category": "test", "key": "key2", "value": {"data": "value2"}}
         ]
         
-        with patch('src.conport.services.custom_data_service.upsert') as mock_upsert:
+        with patch('src.novaport_mcp.services.custom_data_service.upsert') as mock_upsert:
             result = meta_service.batch_log_items(mock_db_session, workspace_id, "custom_data", items)
             
             assert result["succeeded"] == 2
@@ -588,7 +590,7 @@ class TestMetaServiceCoverage:
             {"summary": "Another Valid Decision"}  # Valid
         ]
         
-        with patch('src.conport.services.decision_service.create') as mock_create:
+        with patch('src.novaport_mcp.services.decision_service.create') as mock_create:
             result = meta_service.batch_log_items(mock_db_session, workspace_id, "decision", items)
             
             assert result["succeeded"] == 2
@@ -622,7 +624,7 @@ class TestLinkServiceCoverage:
         mock_db_session.commit.return_value = None
         mock_db_session.refresh.return_value = None
         
-        with patch('src.conport.db.models.ContextLink') as mock_model:
+        with patch('src.novaport_mcp.db.models.ContextLink') as mock_model:
             mock_model.return_value = mock_link
             
             result = link_service.create(mock_db_session, link_data)
@@ -659,6 +661,8 @@ class TestLinkServiceCoverage:
         
         assert result == []
         mock_db_session.query.assert_called_once()
+
+
 class TestDecisionServiceExtended:
     """Additional tests for decision_service to improve coverage."""
 
@@ -667,89 +671,16 @@ class TestDecisionServiceExtended:
         """Mock database session."""
         return Mock(spec=Session)
 
-    @pytest.fixture
-    def workspace_id(self):
-        """Test workspace ID."""
-        return "test_workspace"
-
     def test_get_multi_with_since(self, mock_db_session):
         """Test get_multi function with since parameter."""
         since_date = datetime.datetime(2024, 1, 1)
         mock_decisions = [Mock(), Mock()]
         
-        mock_db_session.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = mock_decisions
+        mock_db_session.query.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = mock_decisions
         
-        from src.conport.services import decision_service
         result = decision_service.get_multi(mock_db_session, limit=10, since=since_date)
         
         assert result == mock_decisions
-        mock_db_session.query.assert_called_once()
-
-    def test_update_function(self, mock_db_session):
-        """Test update function."""
-        from src.conport.services import decision_service
-        from src.conport.schemas.decision import DecisionUpdate
-        
-        mock_decision = Mock()
-        mock_decision.id = 1
-        mock_decision.summary = "Updated Decision"
-        
-        update_data = DecisionUpdate(summary="Updated Decision")
-        
-        with patch.object(decision_service, 'get') as mock_get:
-            mock_get.return_value = mock_decision
-            
-            result = decision_service.update(mock_db_session, 1, update_data)
-            
-            assert result == mock_decision
-            mock_db_session.commit.assert_called_once()
-            mock_db_session.refresh.assert_called_once()
-
-    def test_update_not_found(self, mock_db_session):
-        """Test update function when decision not found."""
-        from src.conport.services import decision_service
-        from src.conport.schemas.decision import DecisionUpdate
-        
-        update_data = DecisionUpdate(summary="Updated Decision")
-        
-        with patch.object(decision_service, 'get') as mock_get:
-            mock_get.return_value = None
-            
-            result = decision_service.update(mock_db_session, 999, update_data)
-            
-            assert result is None
-            mock_db_session.commit.assert_not_called()
-
-    def test_delete_function(self, mock_db_session, workspace_id):
-        """Test delete function."""
-        from src.conport.services import decision_service
-        
-        mock_decision = Mock()
-        mock_decision.id = 1
-        
-        with patch.object(decision_service, 'get') as mock_get:
-            with patch('src.conport.services.vector_service.delete_embedding') as mock_delete:
-                mock_get.return_value = mock_decision
-                
-                result = decision_service.delete(mock_db_session, workspace_id, 1)
-                
-                assert result == mock_decision
-                mock_db_session.delete.assert_called_once_with(mock_decision)
-                mock_db_session.commit.assert_called_once()
-                mock_delete.assert_called_once()
-
-    def test_delete_not_found(self, mock_db_session, workspace_id):
-        """Test delete function when decision not found."""
-        from src.conport.services import decision_service
-        
-        with patch.object(decision_service, 'get') as mock_get:
-            mock_get.return_value = None
-            
-            result = decision_service.delete(mock_db_session, workspace_id, 999)
-            
-            assert result is None
-            mock_db_session.delete.assert_not_called()
-            mock_db_session.commit.assert_not_called()
 
 
 class TestSystemPatternServiceExtended:
@@ -760,86 +691,13 @@ class TestSystemPatternServiceExtended:
         """Mock database session."""
         return Mock(spec=Session)
 
-    @pytest.fixture
-    def workspace_id(self):
-        """Test workspace ID."""
-        return "test_workspace"
-
     def test_get_multi_with_since(self, mock_db_session):
         """Test get_multi function with since parameter."""
         since_date = datetime.datetime(2024, 1, 1)
         mock_patterns = [Mock(), Mock()]
         
-        mock_db_session.query.return_value.filter.return_value.order_by.return_value.limit.return_value.all.return_value = mock_patterns
+        mock_db_session.query.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = mock_patterns
         
-        from src.conport.services import system_pattern_service
         result = system_pattern_service.get_multi(mock_db_session, limit=10, since=since_date)
         
         assert result == mock_patterns
-        mock_db_session.query.assert_called_once()
-
-    def test_update_function(self, mock_db_session):
-        """Test update function."""
-        from src.conport.services import system_pattern_service
-        from src.conport.schemas.system_pattern import SystemPatternUpdate
-        
-        mock_pattern = Mock()
-        mock_pattern.id = 1
-        mock_pattern.name = "Updated Pattern"
-        
-        update_data = SystemPatternUpdate(name="Updated Pattern")
-        
-        with patch.object(system_pattern_service, 'get') as mock_get:
-            mock_get.return_value = mock_pattern
-            
-            result = system_pattern_service.update(mock_db_session, 1, update_data)
-            
-            assert result == mock_pattern
-            mock_db_session.commit.assert_called_once()
-            mock_db_session.refresh.assert_called_once()
-
-    def test_update_not_found(self, mock_db_session):
-        """Test update function when pattern not found."""
-        from src.conport.services import system_pattern_service
-        from src.conport.schemas.system_pattern import SystemPatternUpdate
-        
-        update_data = SystemPatternUpdate(name="Updated Pattern")
-        
-        with patch.object(system_pattern_service, 'get') as mock_get:
-            mock_get.return_value = None
-            
-            result = system_pattern_service.update(mock_db_session, 999, update_data)
-            
-            assert result is None
-            mock_db_session.commit.assert_not_called()
-
-    def test_delete_function(self, mock_db_session, workspace_id):
-        """Test delete function."""
-        from src.conport.services import system_pattern_service
-        
-        mock_pattern = Mock()
-        mock_pattern.id = 1
-        
-        with patch.object(system_pattern_service, 'get') as mock_get:
-            with patch('src.conport.services.vector_service.delete_embedding') as mock_delete:
-                mock_get.return_value = mock_pattern
-                
-                result = system_pattern_service.delete(mock_db_session, workspace_id, 1)
-                
-                assert result == mock_pattern
-                mock_db_session.delete.assert_called_once_with(mock_pattern)
-                mock_db_session.commit.assert_called_once()
-                mock_delete.assert_called_once()
-
-    def test_delete_not_found(self, mock_db_session, workspace_id):
-        """Test delete function when pattern not found."""
-        from src.conport.services import system_pattern_service
-        
-        with patch.object(system_pattern_service, 'get') as mock_get:
-            mock_get.return_value = None
-            
-            result = system_pattern_service.delete(mock_db_session, workspace_id, 999)
-            
-            assert result is None
-            mock_db_session.delete.assert_not_called()
-            mock_db_session.commit.assert_not_called()

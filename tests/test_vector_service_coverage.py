@@ -6,7 +6,7 @@ import shutil
 from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 
-from src.conport.services import vector_service
+from src.novaport_mcp.services import vector_service
 
 
 class TestVectorServiceEmbedding:
@@ -17,7 +17,7 @@ class TestVectorServiceEmbedding:
         # Reset de global _model voor de test
         vector_service._model = None
         
-        with patch('src.conport.services.vector_service.SentenceTransformer') as mock_transformer:
+        with patch('src.novaport_mcp.services.vector_service.SentenceTransformer') as mock_transformer:
             mock_model = Mock()
             mock_transformer.return_value = mock_model
             
@@ -34,7 +34,7 @@ class TestVectorServiceEmbedding:
 
     def test_generate_embedding(self):
         """Test generate_embedding functie."""
-        with patch('src.conport.services.vector_service.get_embedding_model') as mock_get_model:
+        with patch('src.novaport_mcp.services.vector_service.get_embedding_model') as mock_get_model:
             mock_model = Mock()
             mock_encoded = Mock()
             mock_encoded.tolist.return_value = [0.1, 0.2, 0.3]
@@ -62,9 +62,9 @@ class TestVectorServiceChromaClient:
         
         workspace_id = "test_workspace"
         
-        with patch('src.conport.services.vector_service.Path') as mock_path:
-            with patch('src.conport.services.vector_service.core_config.get_vector_db_path_for_workspace') as mock_get_path:
-                with patch('src.conport.services.vector_service.chromadb.PersistentClient') as mock_client:
+        with patch('src.novaport_mcp.services.vector_service.Path') as mock_path:
+            with patch('src.novaport_mcp.services.vector_service.core_config.get_vector_db_path_for_workspace') as mock_get_path:
+                with patch('src.novaport_mcp.services.vector_service.chromadb.PersistentClient') as mock_client:
                     mock_path_obj = Mock()
                     mock_path_obj.resolve.return_value = "/test/path"
                     mock_path.return_value = mock_path_obj
@@ -88,8 +88,8 @@ class TestVectorServiceChromaClient:
         # Set up cache manually
         vector_service._chroma_clients["/test/path"] = mock_client
         
-        with patch('src.conport.services.vector_service.Path') as mock_path:
-            with patch('src.conport.services.vector_service.core_config.get_vector_db_path_for_workspace') as mock_get_path:
+        with patch('src.novaport_mcp.services.vector_service.Path') as mock_path:
+            with patch('src.novaport_mcp.services.vector_service.core_config.get_vector_db_path_for_workspace') as mock_get_path:
                 mock_path_obj = Mock()
                 mock_path_obj.resolve.return_value = "/test/path"
                 mock_path.return_value = mock_path_obj
@@ -117,8 +117,8 @@ class TestVectorServiceChromaClient:
         vector_service._chroma_clients[db_path] = mock_client
         vector_service._collections["test_workspace_collection"] = mock_collection
         
-        with patch('src.conport.services.vector_service.Path') as mock_path:
-            with patch('src.conport.services.vector_service.core_config.get_vector_db_path_for_workspace') as mock_get_path:
+        with patch('src.novaport_mcp.services.vector_service.Path') as mock_path:
+            with patch('src.novaport_mcp.services.vector_service.core_config.get_vector_db_path_for_workspace') as mock_get_path:
                 with patch('time.sleep'):  # Mock sleep to speed up test
                     with patch('gc.collect'):  # Mock garbage collection
                         mock_path_obj = Mock()
@@ -149,8 +149,8 @@ class TestVectorServiceChromaClient:
         
         vector_service._chroma_clients[db_path] = mock_client
         
-        with patch('src.conport.services.vector_service.Path') as mock_path:
-            with patch('src.conport.services.vector_service.core_config.get_vector_db_path_for_workspace') as mock_get_path:
+        with patch('src.novaport_mcp.services.vector_service.Path') as mock_path:
+            with patch('src.novaport_mcp.services.vector_service.core_config.get_vector_db_path_for_workspace') as mock_get_path:
                 mock_path_obj = Mock()
                 mock_path_obj.resolve.return_value = db_path
                 mock_path.return_value = mock_path_obj
@@ -200,7 +200,7 @@ class TestVectorServiceCollection:
         
         vector_service._collections[cache_key] = mock_invalid_collection
         
-        with patch('src.conport.services.vector_service.get_chroma_client') as mock_get_client:
+        with patch('src.novaport_mcp.services.vector_service.get_chroma_client') as mock_get_client:
             mock_client = Mock()
             mock_new_collection = Mock()
             mock_client.get_collection.return_value = mock_new_collection
@@ -220,7 +220,7 @@ class TestVectorServiceCollection:
         workspace_id = "test_workspace"
         collection_name = "test_collection"
         
-        with patch('src.conport.services.vector_service.get_chroma_client') as mock_get_client:
+        with patch('src.novaport_mcp.services.vector_service.get_chroma_client') as mock_get_client:
             mock_client = Mock()
             mock_client.get_collection.side_effect = Exception("Collection not found")
             
@@ -240,7 +240,7 @@ class TestVectorServiceCollection:
         
         workspace_id = "test_workspace"
         
-        with patch('src.conport.services.vector_service.get_chroma_client') as mock_get_client:
+        with patch('src.novaport_mcp.services.vector_service.get_chroma_client') as mock_get_client:
             mock_get_client.side_effect = Exception("Client error")
             
             with pytest.raises(Exception, match="Client error"):
@@ -257,8 +257,8 @@ class TestVectorServiceOperations:
         text = "test text"
         metadata = {"type": "test", "valid": True, "invalid": None}
         
-        with patch('src.conport.services.vector_service.get_collection') as mock_get_collection:
-            with patch('src.conport.services.vector_service.generate_embedding') as mock_generate:
+        with patch('src.novaport_mcp.services.vector_service.get_collection') as mock_get_collection:
+            with patch('src.novaport_mcp.services.vector_service.generate_embedding') as mock_generate:
                 mock_collection = Mock()
                 mock_get_collection.return_value = mock_collection
                 mock_generate.return_value = [0.1, 0.2, 0.3]
@@ -281,7 +281,7 @@ class TestVectorServiceOperations:
         workspace_id = "test_workspace"
         item_id = "test_item"
         
-        with patch('src.conport.services.vector_service.get_collection') as mock_get_collection:
+        with patch('src.novaport_mcp.services.vector_service.get_collection') as mock_get_collection:
             mock_collection = Mock()
             mock_get_collection.return_value = mock_collection
             
@@ -295,7 +295,7 @@ class TestVectorServiceOperations:
         workspace_id = "test_workspace"
         item_id = "test_item"
         
-        with patch('src.conport.services.vector_service.get_collection') as mock_get_collection:
+        with patch('src.novaport_mcp.services.vector_service.get_collection') as mock_get_collection:
             mock_collection = Mock()
             mock_collection.delete.side_effect = Exception("Delete error")
             mock_get_collection.return_value = mock_collection
@@ -312,8 +312,8 @@ class TestVectorServiceOperations:
         top_k = 5
         filters = {"type": "test"}
         
-        with patch('src.conport.services.vector_service.get_collection') as mock_get_collection:
-            with patch('src.conport.services.vector_service.generate_embedding') as mock_generate:
+        with patch('src.novaport_mcp.services.vector_service.get_collection') as mock_get_collection:
+            with patch('src.novaport_mcp.services.vector_service.generate_embedding') as mock_generate:
                 mock_collection = Mock()
                 mock_get_collection.return_value = mock_collection
                 mock_generate.return_value = [0.1, 0.2, 0.3]
@@ -348,8 +348,8 @@ class TestVectorServiceOperations:
         query_text = "test query"
         top_k = 5
         
-        with patch('src.conport.services.vector_service.get_collection') as mock_get_collection:
-            with patch('src.conport.services.vector_service.generate_embedding') as mock_generate:
+        with patch('src.novaport_mcp.services.vector_service.get_collection') as mock_get_collection:
+            with patch('src.novaport_mcp.services.vector_service.generate_embedding') as mock_generate:
                 mock_collection = Mock()
                 mock_get_collection.return_value = mock_collection
                 mock_generate.return_value = [0.1, 0.2, 0.3]
@@ -372,8 +372,8 @@ class TestVectorServiceOperations:
         query_text = "test query"
         top_k = 5
         
-        with patch('src.conport.services.vector_service.get_collection') as mock_get_collection:
-            with patch('src.conport.services.vector_service.generate_embedding') as mock_generate:
+        with patch('src.novaport_mcp.services.vector_service.get_collection') as mock_get_collection:
+            with patch('src.novaport_mcp.services.vector_service.generate_embedding') as mock_generate:
                 mock_collection = Mock()
                 mock_get_collection.return_value = mock_collection
                 mock_generate.return_value = [0.1, 0.2, 0.3]

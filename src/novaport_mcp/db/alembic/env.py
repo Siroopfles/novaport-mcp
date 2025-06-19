@@ -1,10 +1,10 @@
 from logging.config import fileConfig
 
 from alembic import context
-from conport.core.config import settings
+from novaport_mcp.core.config import settings
 
 # Import the Base and settings from our application
-from conport.db.models import Base
+from novaport_mcp.db.models import Base
 from sqlalchemy import engine_from_config, pool
 
 config = context.config

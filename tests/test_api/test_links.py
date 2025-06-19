@@ -13,10 +13,10 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
-from conport.app_factory import create_app
-from conport.db import models
-from conport.db.database import get_db, run_migrations_for_workspace
-from conport.services import vector_service
+from novaport_mcp.app_factory import create_app
+from novaport_mcp.db import models
+from novaport_mcp.db.database import get_db, run_migrations_for_workspace
+from novaport_mcp.services import vector_service
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -248,8 +248,8 @@ class TestLinkCreation:
 
     def test_create_link_service_function_directly(self, db_session):
         """Test the link creation service function directly."""
-        from conport.schemas.link import LinkCreate
-        from conport.services import link_service
+        from novaport_mcp.schemas.link import LinkCreate
+        from novaport_mcp.services import link_service
 
         test_items = create_test_items(db_session)
         decision = test_items["decisions"][0]
@@ -368,8 +368,8 @@ class TestLinkRetrieval:
 
     def test_get_links_service_function_directly(self, db_session):
         """Test the get links service function directly."""
-        from conport.schemas.link import LinkCreate
-        from conport.services import link_service
+        from novaport_mcp.schemas.link import LinkCreate
+        from novaport_mcp.services import link_service
 
         test_items = create_test_items(db_session)
         decision = test_items["decisions"][0]

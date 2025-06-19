@@ -4,11 +4,11 @@ import pytest
 from unittest.mock import Mock, patch
 from sqlalchemy.orm import Session
 
-from src.conport import main
-from src.conport.schemas.decision import DecisionCreate
-from src.conport.schemas.progress import ProgressEntryCreate
-from src.conport.schemas.system_pattern import SystemPatternCreate
-from src.conport.schemas.custom_data import CustomDataCreate
+from src.novaport_mcp import main
+from src.novaport_mcp.schemas.decision import DecisionCreate
+from src.novaport_mcp.schemas.progress import ProgressEntryCreate
+from src.novaport_mcp.schemas.system_pattern import SystemPatternCreate
+from src.novaport_mcp.schemas.custom_data import CustomDataCreate
 
 # NOTE: These sync tests are disabled because main.py functions are all async.
 # Use test_main_async.py instead.
@@ -31,7 +31,7 @@ class TestMainCLIFunctions:
 
     def test_get_product_context(self, mock_db_session):
         """Test get_product_context function."""
-        with patch('src.conport.main.context_service.get_product_context') as mock_get:
+        with patch('src.novaport_mcp.main.context_service.get_product_context') as mock_get:
             mock_context = Mock()
             mock_context.content = {"goal": "Test project"}
             mock_get.return_value = mock_context
@@ -43,7 +43,7 @@ class TestMainCLIFunctions:
 
     def test_get_active_context(self, mock_db_session):
         """Test get_active_context function."""
-        with patch('src.conport.main.context_service.get_active_context') as mock_get:
+        with patch('src.novaport_mcp.main.context_service.get_active_context') as mock_get:
             mock_context = Mock()
             mock_context.content = {"current_focus": "Testing"}
             mock_get.return_value = mock_context
@@ -55,7 +55,7 @@ class TestMainCLIFunctions:
 
     def test_log_decision(self, mock_db_session, workspace_id):
         """Test log_decision function."""
-        with patch('src.conport.main.decision_service.create') as mock_create:
+        with patch('src.novaport_mcp.main.decision_service.create') as mock_create:
             mock_decision = Mock()
             mock_decision.id = 1
             mock_decision.summary = "Test decision"
@@ -74,7 +74,7 @@ class TestMainCLIFunctions:
 
     def test_get_decisions(self, mock_db_session):
         """Test get_decisions function."""
-        with patch('src.conport.main.decision_service.get_multi') as mock_get:
+        with patch('src.novaport_mcp.main.decision_service.get_multi') as mock_get:
             mock_decisions = [Mock(id=1, summary="Decision 1")]
             mock_get.return_value = mock_decisions
             
@@ -85,7 +85,7 @@ class TestMainCLIFunctions:
 
     def test_log_progress(self, mock_db_session, workspace_id):
         """Test log_progress function."""
-        with patch('src.conport.main.progress_service.create') as mock_create:
+        with patch('src.novaport_mcp.main.progress_service.create') as mock_create:
             mock_progress = Mock()
             mock_progress.id = 1
             mock_progress.status = "TODO"
@@ -104,7 +104,7 @@ class TestMainCLIFunctions:
 
     def test_get_progress(self, mock_db_session):
         """Test get_progress function."""
-        with patch('src.conport.main.progress_service.get_multi') as mock_get:
+        with patch('src.novaport_mcp.main.progress_service.get_multi') as mock_get:
             mock_progress = [Mock(id=1, status="TODO")]
             mock_get.return_value = mock_progress
             
@@ -115,7 +115,7 @@ class TestMainCLIFunctions:
 
     def test_log_system_pattern(self, mock_db_session, workspace_id):
         """Test log_system_pattern function."""
-        with patch('src.conport.main.system_pattern_service.create') as mock_create:
+        with patch('src.novaport_mcp.main.system_pattern_service.create') as mock_create:
             mock_pattern = Mock()
             mock_pattern.id = 1
             mock_pattern.name = "Test Pattern"
@@ -134,7 +134,7 @@ class TestMainCLIFunctions:
 
     def test_get_system_patterns(self, mock_db_session):
         """Test get_system_patterns function."""
-        with patch('src.conport.main.system_pattern_service.get_multi') as mock_get:
+        with patch('src.novaport_mcp.main.system_pattern_service.get_multi') as mock_get:
             mock_patterns = [Mock(id=1, name="Pattern 1")]
             mock_get.return_value = mock_patterns
             
@@ -145,7 +145,7 @@ class TestMainCLIFunctions:
 
     def test_log_custom_data(self, mock_db_session, workspace_id):
         """Test log_custom_data function."""
-        with patch('src.conport.main.custom_data_service.upsert') as mock_upsert:
+        with patch('src.novaport_mcp.main.custom_data_service.upsert') as mock_upsert:
             mock_data = Mock()
             mock_data.category = "test_category"
             mock_data.key = "test_key"
@@ -165,7 +165,7 @@ class TestMainCLIFunctions:
 
     def test_get_custom_data(self, mock_db_session):
         """Test get_custom_data function."""
-        with patch('src.conport.main.custom_data_service.get_by_category') as mock_get:
+        with patch('src.novaport_mcp.main.custom_data_service.get_by_category') as mock_get:
             mock_data = [Mock(category="test", key="key1")]
             mock_get.return_value = mock_data
             
@@ -179,7 +179,7 @@ class TestMainCLIFunctions:
 
     def test_get_recent_activity_summary(self, mock_db_session, workspace_id):
         """Test get_recent_activity_summary function."""
-        with patch('src.conport.main.meta_service.get_recent_activity') as mock_get:
+        with patch('src.novaport_mcp.main.meta_service.get_recent_activity') as mock_get:
             mock_activity = {"decisions": [], "progress": []}
             mock_get.return_value = mock_activity
             
@@ -194,7 +194,7 @@ class TestMainCLIFunctions:
 
     def test_link_conport_items(self, mock_db_session, workspace_id):
         """Test link_conport_items function."""
-        with patch('src.conport.main.link_service.create') as mock_create:
+        with patch('src.novaport_mcp.main.link_service.create') as mock_create:
             mock_link = Mock()
             mock_link.id = 1
             mock_create.return_value = mock_link
@@ -223,7 +223,7 @@ class TestMainErrorHandling:
 
     def test_get_decisions_with_error(self, mock_db_session):
         """Test get_decisions with service error."""
-        with patch('src.conport.main.decision_service.get_multi') as mock_get:
+        with patch('src.novaport_mcp.main.decision_service.get_multi') as mock_get:
             mock_get.side_effect = Exception("Database error")
             
             with pytest.raises(Exception):
@@ -231,7 +231,7 @@ class TestMainErrorHandling:
 
     def test_log_decision_with_invalid_data(self, mock_db_session):
         """Test log_decision with invalid data."""
-        with patch('src.conport.main.decision_service.create') as mock_create:
+        with patch('src.novaport_mcp.main.decision_service.create') as mock_create:
             mock_create.side_effect = ValueError("Invalid decision data")
             
             with pytest.raises(ValueError):

@@ -13,10 +13,10 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from conport.app_factory import create_app
-from conport.db import models
-from conport.db.database import get_db, run_migrations_for_workspace
-from conport.services import vector_service
+from novaport_mcp.app_factory import create_app
+from novaport_mcp.db import models
+from novaport_mcp.db.database import get_db, run_migrations_for_workspace
+from novaport_mcp.services import vector_service
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -206,7 +206,7 @@ class TestIOExportFunctionality:
 
     def test_export_service_function_directly(self, db_session):
         """Test the export service function directly."""
-        from conport.services import io_service
+        from novaport_mcp.services import io_service
 
         # Create test data
         create_test_decisions(db_session, 1)
@@ -362,7 +362,7 @@ Invalid block without proper structure
 
     def test_import_service_function_directly(self, db_session):
         """Test the import service function directly."""
-        from conport.services import io_service
+        from novaport_mcp.services import io_service
 
         # Create temporary import directory with valid content
         with tempfile.TemporaryDirectory() as temp_dir:

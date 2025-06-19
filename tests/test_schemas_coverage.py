@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.conport.schemas.error import MCPError
+from src.novaport_mcp.schemas.error import MCPError
 
 
 class TestMCPErrorSchema:

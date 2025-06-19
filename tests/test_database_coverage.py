@@ -8,7 +8,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 
-from src.conport.db import database
+from src.novaport_mcp.db import database
 
 
 class TestDatabaseMigrations:
@@ -19,9 +19,9 @@ class TestDatabaseMigrations:
         mock_engine = Mock()
         db_path = Path("/test/db/path")
         
-        with patch('src.conport.db.database.importlib.resources.files') as mock_files:
-            with patch('src.conport.db.database.Config') as mock_config_class:
-                with patch('src.conport.db.database.command') as mock_command:
+        with patch('src.novaport_mcp.db.database.importlib.resources.files') as mock_files:
+            with patch('src.novaport_mcp.db.database.Config') as mock_config_class:
+                with patch('src.novaport_mcp.db.database.command') as mock_command:
                     # Setup mocks
                     mock_package_root = Mock()
                     mock_files.return_value = mock_package_root
@@ -60,10 +60,10 @@ class TestDatabaseSessionManagement:
         
         workspace_id = "test_workspace"
         
-        with patch('src.conport.db.database.core_config.get_database_url_for_workspace') as mock_get_url:
-            with patch('src.conport.db.database.create_engine') as mock_create_engine:
-                with patch('src.conport.db.database.asyncio.to_thread') as mock_to_thread:
-                    with patch('src.conport.db.database.sessionmaker') as mock_sessionmaker:
+        with patch('src.novaport_mcp.db.database.core_config.get_database_url_for_workspace') as mock_get_url:
+            with patch('src.novaport_mcp.db.database.create_engine') as mock_create_engine:
+                with patch('src.novaport_mcp.db.database.asyncio.to_thread') as mock_to_thread:
+                    with patch('src.novaport_mcp.db.database.sessionmaker') as mock_sessionmaker:
                         # Setup mocks
                         mock_get_url.return_value = "sqlite:///test.db"
                         mock_engine = Mock()
@@ -142,8 +142,8 @@ class TestDatabaseSessionManagement:
         
         workspace_id = "test_workspace"
         
-        with patch('src.conport.db.database.core_config.get_database_url_for_workspace') as mock_get_url:
-            with patch('src.conport.db.database.create_engine') as mock_create_engine:
+        with patch('src.novaport_mcp.db.database.core_config.get_database_url_for_workspace') as mock_get_url:
+            with patch('src.novaport_mcp.db.database.create_engine') as mock_create_engine:
                 # Setup error
                 mock_get_url.return_value = "sqlite:///test.db"
                 mock_create_engine.side_effect = Exception("Database connection failed")
@@ -165,8 +165,8 @@ class TestDatabaseDependencies:
         """Test get_db dependency success."""
         workspace_id_b64 = "dGVzdF93b3Jrc3BhY2U="  # base64 encoded "test_workspace"
         
-        with patch('src.conport.db.database.core_config.decode_workspace_id') as mock_decode:
-            with patch('src.conport.db.database.get_session_local') as mock_get_session:
+        with patch('src.novaport_mcp.db.database.core_config.decode_workspace_id') as mock_decode:
+            with patch('src.novaport_mcp.db.database.get_session_local') as mock_get_session:
                 mock_decode.return_value = "test_workspace"
                 
                 mock_session_local = Mock()
@@ -196,7 +196,7 @@ class TestDatabaseDependencies:
         """Test get_db met decode error."""
         workspace_id_b64 = "invalid_base64"
         
-        with patch('src.conport.db.database.core_config.decode_workspace_id') as mock_decode:
+        with patch('src.novaport_mcp.db.database.core_config.decode_workspace_id') as mock_decode:
             mock_decode.side_effect = ValueError("Invalid base64")
             
             with pytest.raises(Exception):  # HTTPException in test context
@@ -208,8 +208,8 @@ class TestDatabaseDependencies:
         """Test dat database sessie wordt gesloten bij error."""
         workspace_id_b64 = "dGVzdF93b3Jrc3BhY2U="
         
-        with patch('src.conport.db.database.core_config.decode_workspace_id') as mock_decode:
-            with patch('src.conport.db.database.get_session_local') as mock_get_session:
+        with patch('src.novaport_mcp.db.database.core_config.decode_workspace_id') as mock_decode:
+            with patch('src.novaport_mcp.db.database.get_session_local') as mock_get_session:
                 mock_decode.return_value = "test_workspace"
                 
                 mock_session_local = Mock()
@@ -235,7 +235,7 @@ class TestDatabaseContextManager:
         """Test get_db_session_for_workspace success."""
         workspace_id = "test_workspace"
         
-        with patch('src.conport.db.database.get_session_local') as mock_get_session:
+        with patch('src.novaport_mcp.db.database.get_session_local') as mock_get_session:
             mock_session_local = Mock()
             mock_db_session = Mock(spec=Session)
             mock_session_local.return_value = mock_db_session
@@ -252,7 +252,7 @@ class TestDatabaseContextManager:
         """Test get_db_session_for_workspace met error."""
         workspace_id = "test_workspace"
         
-        with patch('src.conport.db.database.get_session_local') as mock_get_session:
+        with patch('src.novaport_mcp.db.database.get_session_local') as mock_get_session:
             mock_get_session.side_effect = Exception("Session creation failed")
             
             with pytest.raises(Exception, match="Session creation failed"):
@@ -264,7 +264,7 @@ class TestDatabaseContextManager:
         """Test cleanup bij exception in context manager."""
         workspace_id = "test_workspace"
         
-        with patch('src.conport.db.database.get_session_local') as mock_get_session:
+        with patch('src.novaport_mcp.db.database.get_session_local') as mock_get_session:
             mock_session_local = Mock()
             mock_db_session = Mock(spec=Session)
             mock_session_local.return_value = mock_db_session
@@ -316,9 +316,9 @@ class TestDatabaseErrorRecovery:
         database._engines.clear()
         database._session_locals.clear()
         
-        with patch('src.conport.db.database.core_config.get_database_url_for_workspace') as mock_get_url:
-            with patch('src.conport.db.database.create_engine') as mock_create_engine:
-                with patch('src.conport.db.database.asyncio.to_thread') as mock_to_thread:
+        with patch('src.novaport_mcp.db.database.core_config.get_database_url_for_workspace') as mock_get_url:
+            with patch('src.novaport_mcp.db.database.create_engine') as mock_create_engine:
+                with patch('src.novaport_mcp.db.database.asyncio.to_thread') as mock_to_thread:
                     # Setup successful engine creation but failed migration
                     mock_get_url.return_value = "sqlite:///test.db"
                     mock_engine = Mock()
@@ -338,9 +338,9 @@ class TestDatabaseErrorRecovery:
         mock_engine.url = "sqlite:///test.db"
         db_path = Path("/complex/path/with spaces/test.db")
         
-        with patch('src.conport.db.database.importlib.resources.files') as mock_files:
-            with patch('src.conport.db.database.Config') as mock_config_class:
-                with patch('src.conport.db.database.command') as mock_command:
+        with patch('src.novaport_mcp.db.database.importlib.resources.files') as mock_files:
+            with patch('src.novaport_mcp.db.database.Config') as mock_config_class:
+                with patch('src.novaport_mcp.db.database.command') as mock_command:
                     # Setup complex path handling
                     mock_package_root = Mock()
                     mock_files.return_value = mock_package_root

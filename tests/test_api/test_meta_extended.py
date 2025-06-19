@@ -2,10 +2,10 @@ import base64
 from pathlib import Path
 
 import pytest
-from conport.app_factory import create_app
-from conport.db import models
-from conport.db.database import get_db, run_migrations_for_workspace
-from conport.services import vector_service
+from novaport_mcp.app_factory import create_app
+from novaport_mcp.db import models
+from novaport_mcp.db.database import get_db, run_migrations_for_workspace
+from novaport_mcp.services import vector_service
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -185,7 +185,7 @@ class TestGetConportSchema:
         """Test that the get_conport_schema function exists and is importable."""
         import inspect
 
-        from conport.main import get_conport_schema
+        from novaport_mcp.main import get_conport_schema
 
         # Check that the function exists
         assert callable(get_conport_schema)
@@ -203,7 +203,7 @@ class TestGetConportSchema:
 
     def test_schema_function_structure(self):
         """Test the basic structure of the schema function without executing."""
-        from conport.main import get_conport_schema
+        from novaport_mcp.main import get_conport_schema
 
         # Test that the function has the correct annotations
         annotations = get_conport_schema.__annotations__
@@ -232,7 +232,7 @@ class TestMetaServiceFunctions:
 
     def test_get_recent_activity_service(self, db_session):
         """Test the get_recent_activity service function directly."""
-        from conport.services import meta_service
+        from novaport_mcp.services import meta_service
 
         # Create test data
         create_test_data(db_session, "_service")
@@ -252,7 +252,7 @@ class TestMetaServiceFunctions:
 
     def test_get_recent_activity_with_limit(self, db_session):
         """Test get_recent_activity with different limits."""
-        from conport.services import meta_service
+        from novaport_mcp.services import meta_service
 
         # Create test data
         create_test_data(db_session, "_limit")
@@ -266,7 +266,7 @@ class TestMetaServiceFunctions:
 
     def test_batch_log_items_decisions(self, db_session):
         """Test batch_log_items for decisions."""
-        from conport.services import meta_service
+        from novaport_mcp.services import meta_service
 
         items = [
             {"summary": "Decision 1", "rationale": "Rationale 1", "tags": ["test"]},
@@ -286,7 +286,7 @@ class TestMetaServiceFunctions:
 
     def test_batch_log_items_invalid_type(self, db_session):
         """Test batch_log_items with invalid item type."""
-        from conport.services import meta_service
+        from novaport_mcp.services import meta_service
 
         items = [{"test": "data"}]
 
@@ -302,7 +302,7 @@ class TestMetaServiceFunctions:
 
     def test_batch_log_items_validation_errors(self, db_session):
         """Test batch_log_items with validation errors."""
-        from conport.services import meta_service
+        from novaport_mcp.services import meta_service
 
         # Items with errors (missing required fields)
         items = [
@@ -324,7 +324,7 @@ class TestMetaServiceFunctions:
 
     def test_batch_log_items_progress(self, db_session):
         """Test batch_log_items for progress entries."""
-        from conport.services import meta_service
+        from novaport_mcp.services import meta_service
 
         items = [
             {"status": "TODO", "description": "Task 1"},
@@ -343,7 +343,7 @@ class TestMetaServiceFunctions:
 
     def test_get_recent_activity_empty_database(self, db_session):
         """Test get_recent_activity service with empty database."""
-        from conport.services import meta_service
+        from novaport_mcp.services import meta_service
 
         # Test without data
         result = meta_service.get_recent_activity(db_session, limit=5)
@@ -377,7 +377,7 @@ class TestTimestampFiltering:
         """Test get_recent_activity with since datetime parameter."""
         import datetime
 
-        from conport.services import meta_service
+        from novaport_mcp.services import meta_service
 
         # Create test data at different times
         now = datetime.datetime.utcnow()
@@ -587,7 +587,7 @@ class TestTimestampFiltering:
         """Test timestamp filtering works correctly across different item types."""
         import datetime
 
-        from conport.services import meta_service
+        from novaport_mcp.services import meta_service
 
         now = datetime.datetime.utcnow()
         cutoff_time = now - datetime.timedelta(hours=2)
@@ -638,7 +638,7 @@ class TestTimestampFiltering:
         """Test timestamp filtering boundary conditions."""
         import datetime
 
-        from conport.services import meta_service
+        from novaport_mcp.services import meta_service
 
         now = datetime.datetime.utcnow()
         exact_cutoff = now - datetime.timedelta(hours=1)
@@ -673,7 +673,7 @@ class TestTimestampFiltering:
         """Test that timestamp filtering works correctly with limit parameter."""
         import datetime
 
-        from conport.services import meta_service
+        from novaport_mcp.services import meta_service
 
         now = datetime.datetime.utcnow()
         cutoff_time = now - datetime.timedelta(hours=1)

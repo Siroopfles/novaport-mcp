@@ -2,10 +2,10 @@ import base64
 from pathlib import Path
 
 import pytest
-from conport.app_factory import create_app
-from conport.db import models
-from conport.db.database import get_db, run_migrations_for_workspace
-from conport.services import vector_service
+from novaport_mcp.app_factory import create_app
+from novaport_mcp.db import models
+from novaport_mcp.db.database import get_db, run_migrations_for_workspace
+from novaport_mcp.services import vector_service
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -221,7 +221,7 @@ class TestDiffContextVersions:
         """Test that the diff_context_versions function exists and is importable."""
         import inspect
 
-        from conport.main import diff_context_versions
+        from novaport_mcp.main import diff_context_versions
 
         # Check that the function exists
         assert callable(diff_context_versions)
@@ -239,43 +239,39 @@ class TestDiffContextVersions:
         assert diff_context_versions.__doc__ is not None
         assert "diff" in diff_context_versions.__doc__.lower()
 
-    def test_diff_context_versions_invalid_item_type(self, db_session):
+    @pytest.mark.asyncio
+    async def test_diff_context_versions_invalid_item_type(self, db_session):
         """Test diff with invalid item_type."""
-        import asyncio
+        from novaport_mcp.main import diff_context_versions, db_session_context
 
-        from conport.main import diff_context_versions
-
-        result = asyncio.run(
-            diff_context_versions(
-                workspace_id="test",
-                item_type="invalid_type",
-                version_a=1,
-                version_b=2,
-                db=db_session,
-            )
+        token = db_session_context.set(db_session)
+        result = await diff_context_versions(
+            workspace_id="test",
+            item_type="invalid_type",
+            version_a=1,
+            version_b=2,
         )
+        db_session_context.reset(token)
 
         # Expect an MCPError
         assert hasattr(result, "error")
         assert "Invalid item_type" in result.error
         assert "invalid_type" in result.details["item_type"]
 
-    def test_diff_context_versions_nonexistent_versions(self, db_session):
+    @pytest.mark.asyncio
+    async def test_diff_context_versions_nonexistent_versions(self, db_session):
         """Test diff with non-existent versions."""
-        import asyncio
-
-        from conport.main import diff_context_versions
+        from novaport_mcp.main import diff_context_versions, db_session_context
 
         # Test with both versions that don't exist
-        result = asyncio.run(
-            diff_context_versions(
-                workspace_id="test",
-                item_type="product_context",
-                version_a=999,  # Doesn't exist
-                version_b=1000,  # Also doesn't exist
-                db=db_session,
-            )
+        token = db_session_context.set(db_session)
+        result = await diff_context_versions(
+            workspace_id="test",
+            item_type="product_context",
+            version_a=999,  # Doesn't exist
+            version_b=1000,  # Also doesn't exist
         )
+        db_session_context.reset(token)
 
         # Expect an MCPError for the first version that is not found
         assert hasattr(result, "error")

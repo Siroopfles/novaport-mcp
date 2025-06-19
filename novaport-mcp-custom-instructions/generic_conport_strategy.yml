@@ -3,7 +3,7 @@
 # Description: Comprehensive guidance for LLMs on using NovaPort-MCP tools effectively
 
 metadata:
-  name: "Generic ConPort Strategy"
+  name: "Generic NovaPort-MCP Strategy"
   version: "0.1.0-beta"
   target_audience: "Large Language Models"
   description: "Strategic guidance for effective use of NovaPort-MCP tools and context management"
@@ -13,7 +13,7 @@ metadata:
 # WORKSPACE INITIALIZATION
 # =============================================================================
 workspace_initialization:
-  description: "Essential steps when starting work in a new ConPort workspace"
+  description: "Essential steps when starting work in a new NovaPort-MCP workspace"
   
   step_1_context_check:
     tool: "get_product_context / get_active_context"
@@ -160,10 +160,10 @@ tool_categories:
           - "Combine with other retrieval methods for comprehensive results"
 
   link_management:
-    description: "Tools for creating relationships between ConPort items"
+    description: "Tools for creating relationships between NovaPort-MCP items"
     tools:
       - name: "create_link"
-        purpose: "Establish relationships between different ConPort items"
+        purpose: "Establish relationships between different NovaPort-MCP items"
         when_to_use: "To connect related decisions, progress items, or custom data"
         relationships:
           - "decision -> system_pattern (implements)"
@@ -415,7 +415,7 @@ troubleshooting:
 integration_guidelines:
   
   with_development_workflow:
-    - "Integrate ConPort calls into your natural development process"
+    - "Integrate NovaPort-MCP calls into your natural development process"
     - "Don't over-document - focus on decisions and patterns that matter"
     - "Use progress tracking for tasks that span multiple sessions"
     - "Store reusable configurations and specifications"

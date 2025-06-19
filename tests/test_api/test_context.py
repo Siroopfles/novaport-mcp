@@ -3,9 +3,9 @@ import shutil
 from pathlib import Path
 
 import pytest
-from conport.app_factory import create_app
-from conport.db import models
-from conport.db.database import get_db, run_migrations_for_workspace
+from novaport_mcp.app_factory import create_app
+from novaport_mcp.db import models
+from novaport_mcp.db.database import get_db, run_migrations_for_workspace
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
