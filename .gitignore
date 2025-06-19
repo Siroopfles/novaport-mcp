@@ -1,39 +1,119 @@
-# Python
+# General
+# =======
+# Byte-compiled / optimized / C extensions
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 
-# Virtual Environment
+# Caches
+.cache/
+.pytest_cache/
+.mypy_cache/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Poetry
+# ======
+# Poetry virtualenv
 .venv/
 venv/
-ENV/
 env/
+ENV/
 
-# IDE / Editor
-.vscode/
-.idea/
-*.swp
-*.swo
+# Poetry lock file should typically be committed, but if you have a library
+# vs. application debate, some choose to ignore it. For an application,
+# it is best to commit poetry.lock. I will assume it's committed.
 
-# Database files
+# Environment
+# ===========
+# Environment variables
+# Ignore the .env file to keep sensitive data out of version control.
+.env
+.env.*
+# But DO track the example file.
+!.env.example
+
+# Databases & Application Data
+# ============================
+# Ignore SQLite databases
 *.db
 *.sqlite
 *.sqlite3
 
-# Data directories
-conport_data/
+# Ignore application-specific data directories created in workspaces
+# This is a crucial rule to prevent test data from being committed.
+.novaport_data/
+**/test_workspace/.novaport_data/
+**/test_workspace_io/.novaport_data/
 
-# Environment variables
-.env
+# Ignore ChromaDB vector database files specifically as well
+chroma.sqlite3
+chroma_data/
+**/vectordb/
 
-# Poetry
-.poetry/
-poetry.lockb
+# Testing & Coverage
+# ==================
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+nosetests.xml
+*.cover
+*.py,cover
+.hypothesis/
 
-# OS generated files
+# IDEs & Editors
+# ==============
+# VS Code
+.vscode/
+# PyCharm
+.idea/
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+# General
+*.swp
+*.swo
+*~
+
+# OS-generated files
+# ==================
+# macOS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+# Windows
 Thumbs.db
-**/__pycache__/**
+ehthumbs.db
 
+# Other
+# =====
+# Logs
+*.log
+logs/
+
+# Jupyter Notebook
+.ipynb_checkpoints
 Copy file
+
