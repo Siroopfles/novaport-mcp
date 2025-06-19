@@ -4,7 +4,7 @@ version = "0.1.0-beta"
 description = "A robust, database-backed Model Context Protocol (MCP) server for managing structured project context."
 authors = ["Siroopfles <selfpooris@gmail.com>"]
 readme = "README.md"
-packages = [{include = "conport", from = "src"}]
+packages = [{include = "novaport_mcp", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -21,6 +21,7 @@ typer = {extras = ["all"], version = "^0.12.3"}
 click = "^8.1.0, <8.2.0"  # Pin to 8.1.x to avoid breaking changes in 8.2.x
 fastmcp = ">=0.9.0"  # THE CORRECT DEPENDENCY
 dictdiffer = "^0.9.0"
+requests = "^2.32.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
@@ -32,7 +33,7 @@ ruff = "^0.4.10"
 mypy = "^1.8.0"
 
 [tool.poetry.scripts]
-conport = "conport.__main__:cli"
+novaport = "novaport_mcp.__main__:cli"
 
 [build-system]
 requires = ["poetry-core"]
@@ -48,3 +49,60 @@ ignore = ["D100", "D104", "D107"]
 
 [tool.black]
 line-length = 88
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+    "--cov=conport",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+]
+
+[tool.coverage.run]
+source = ["src/conport"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "src/conport/db/alembic/*",
+    "src/conport/db/alembic/versions/*",
+    "*/__main__.py",
+    "*/migrations/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+precision = 2
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"

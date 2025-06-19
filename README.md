@@ -4,7 +4,7 @@
 
 This is a **complete, from-the-ground-up rewrite** of the original [greatscottymac/context-portal](https://github.com/GreatScottyMac/context-portal). The purpose of this fork is to provide a robust, maintainable, and type-safe Model Context Protocol (MCP) server, specifically developed as the backend for the [NovaPort Project](https://github.com/Siroopfles/NovaPort).
 
-All original features of ConPort have been preserved, but the underlying architecture has been rebuilt using modern tooling and best practices to ensure stability and scalability.
+All original features of the original project have been preserved, but the underlying architecture has been rebuilt using modern tooling and best practices to ensure stability and scalability.
 
 ## Key Architectural Improvements
 
@@ -49,7 +49,7 @@ This version is superior to the original in the following ways:
 To start the server for use with an MCP client like Roo Code, run the following command in your terminal:
 
 ```bash
-poetry run conport
+poetry run novaport-mcp
 ```
 
 The server will start and wait for `stdio` input. It is multi-project aware; the specific project context is determined by the `workspace_id` parameter sent with each tool call.
@@ -71,7 +71,7 @@ In your project workspace, create or open the `mcp_settings.json` file and add t
       "command": "poetry",
       "args": [
         "run",
-        "conport"
+        "novaport-mcp"
       ],
       "cwd": "<absolute path to your cloned novaport-mcp directory>",
       "disabled": false,
@@ -102,7 +102,7 @@ If you encounter an `MCP error -32000: Connection closed` with the standard setu
       "command": "<path from 'poetry env info -p'>",
       "args": [
         "-m",
-        "conport"
+        "novaport_mcp"
       ],
       "cwd": "<absolute path to your cloned novaport-mcp directory>",
       "disabled": false,
@@ -147,7 +147,7 @@ docker run -d --name novaport-mcp \
     ```bash
     poetry run pytest
     ```
--   **Creating a New Database Migration:** After modifying the models in `src/conport/db/models.py`, generate a new migration script:
+-   **Creating a New Database Migration:** After modifying the models in `src/novaport_mcp/db/models.py`, generate a new migration script:
     ```bash
     # Note: The migration will be applied automatically to new or existing workspace databases.
     # This command only generates the script for version control.
@@ -157,7 +157,7 @@ docker run -d --name novaport-mcp \
     1.  **Start the server with Uvicorn:**
         ```bash
         # Note: This mode is for exploration and does not use the per-workspace database logic.
-        poetry run uvicorn src.conport.app_factory:create_app --factory --host 0.0.0.0 --port 8000
+        poetry run uvicorn src.novaport_mcp.app_factory:create_app --factory --host 0.0.0.0 --port 8000
         ```
     2.  **Open your browser:**
         -   Interactive API docs (Swagger): [http://localhost:8000/docs](http://localhost:8000/docs)
@@ -165,24 +165,24 @@ docker run -d --name novaport-mcp \
 
 ## Usage with LLM Agents (Custom Instructions)
 
-For LLM agents and AI assistants working with ConPort, comprehensive guidance is available in the [`conport-custom-instructions/generic_conport_strategy.yml`](conport-custom-instructions/generic_conport_strategy.yml) file. This strategy document provides:
+For LLM agents and AI assistants working with NovaPort-MCP, comprehensive guidance is available in the [`novaport-mcp-custom-instructions/generic_conport_strategy.yml`](novaport-mcp-custom-instructions/generic_conport_strategy.yml) file. This strategy document provides:
 
-- **Tool Usage Patterns:** Best practices for using ConPort tools effectively
+- **Tool Usage Patterns:** Best practices for using NovaPort-MCP tools effectively
 - **Workflow Strategies:** Recommended approaches for different types of development tasks
 - **Context Management:** Guidelines for maintaining context across tool calls
 - **Error Handling:** Common error scenarios and recovery strategies
 
-The custom instructions are designed to help LLM agents understand ConPort's capabilities and use them efficiently in software development workflows.
+The custom instructions are designed to help LLM agents understand NovaPort-MCP's capabilities and use them efficiently in software development workflows.
 
 ## Documentation
 
 For detailed technical information, architecture insights, and implementation details, refer to our comprehensive documentation:
 
-- **[Technical Deep Dive](docs/deep_dive.md):** In-depth coverage of ConPort's architecture, design decisions, database schema, and advanced usage patterns.
+- **[Technical Deep Dive](docs/deep_dive.md):** In-depth coverage of NovaPort-MCP's architecture, design decisions, database schema, and advanced usage patterns.
 
 ## Release Information
 
-Stay informed about ConPort updates and changes:
+Stay informed about NovaPort-MCP updates and changes:
 
 - **[Release Notes](RELEASE_NOTES.md):** Complete version history with detailed changelogs.
 - **[Update Guide](UPDATE_GUIDE.md):** Step-by-step migration procedures for updating between versions.

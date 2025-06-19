@@ -2,10 +2,10 @@ import base64
 from pathlib import Path
 
 import pytest
-from conport.app_factory import create_app
-from conport.db import models
-from conport.db.database import get_db, run_migrations_for_workspace
-from conport.services import vector_service
+from novaport_mcp.app_factory import create_app
+from novaport_mcp.db import models
+from novaport_mcp.db.database import get_db, run_migrations_for_workspace
+from novaport_mcp.services import vector_service
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -18,6 +18,7 @@ app = create_app()
 # Use a fixed test-workspace for history tests.
 TEST_WORKSPACE_DIR = Path("./test_workspace_history_extended")
 
+
 def get_test_db_url():
     """Generates the URL for the test database."""
     data_dir = TEST_WORKSPACE_DIR / ".novaport_data"
@@ -25,15 +26,15 @@ def get_test_db_url():
     db_path = data_dir.resolve() / "conport.db"
     return f"sqlite:///{db_path}"
 
+
 # Setup a test-specific database engine
-engine = create_engine(
-    get_test_db_url(), connect_args={"check_same_thread": False}
-)
+engine = create_engine(get_test_db_url(), connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Run the real Alembic migrations on the test database
 db_path = Path(get_test_db_url().replace("sqlite:///", ""))
 run_migrations_for_workspace(engine, db_path)
+
 
 def override_get_db():
     """Override the 'get_db' dependency for the tests."""
@@ -43,7 +44,9 @@ def override_get_db():
     finally:
         db.close()
 
+
 app.dependency_overrides[get_db] = override_get_db
+
 
 @pytest.fixture(scope="module")
 def client():
@@ -62,6 +65,7 @@ def client():
     # Use robust rmtree for cleanup
     robust_rmtree(TEST_WORKSPACE_DIR)
 
+
 @pytest.fixture
 def db_session():
     """Create a database session for direct database operations."""
@@ -71,9 +75,11 @@ def db_session():
     finally:
         db.close()
 
+
 def b64_encode(s: str) -> str:
     """Helper to encode paths for test URLs."""
     return base64.urlsafe_b64encode(s.encode()).decode()
+
 
 def create_test_history_records(db_session, item_type="product_context", count=3):
     """Helper function to create test history records."""
@@ -87,13 +93,14 @@ def create_test_history_records(db_session, item_type="product_context", count=3
         record = history_model(
             version=i,
             content={"test_key": f"test_value_{i}", "version": i},
-            change_source=f"Test Change {i}"
+            change_source=f"Test Change {i}",
         )
         db_session.add(record)
         records.append(record)
 
     db_session.commit()
     return records
+
 
 class TestGetItemHistory:
     """Test class for get_item_history function."""
@@ -163,7 +170,9 @@ class TestGetItemHistory:
         create_test_history_records(db_session, "product_context", 5)
 
         # Test met limit=2
-        response = client.get(f"/workspaces/{workspace_b64}/history/product_context?limit=2")
+        response = client.get(
+            f"/workspaces/{workspace_b64}/history/product_context?limit=2"
+        )
         assert response.status_code == 200
 
         history_data = response.json()
@@ -212,7 +221,7 @@ class TestDiffContextVersions:
         """Test that the diff_context_versions function exists and is importable."""
         import inspect
 
-        from conport.main import diff_context_versions
+        from novaport_mcp.main import diff_context_versions
 
         # Check that the function exists
         assert callable(diff_context_versions)
@@ -230,50 +239,51 @@ class TestDiffContextVersions:
         assert diff_context_versions.__doc__ is not None
         assert "diff" in diff_context_versions.__doc__.lower()
 
-    def test_diff_context_versions_invalid_item_type(self, db_session):
+    @pytest.mark.asyncio
+    async def test_diff_context_versions_invalid_item_type(self, db_session):
         """Test diff with invalid item_type."""
-        import asyncio
+        from novaport_mcp.main import diff_context_versions, db_session_context
 
-        from conport.main import diff_context_versions
-
-        result = asyncio.run(diff_context_versions(
+        token = db_session_context.set(db_session)
+        result = await diff_context_versions(
             workspace_id="test",
             item_type="invalid_type",
             version_a=1,
             version_b=2,
-            db=db_session
-        ))
+        )
+        db_session_context.reset(token)
 
         # Expect an MCPError
-        assert hasattr(result, 'error')
+        assert hasattr(result, "error")
         assert "Invalid item_type" in result.error
         assert "invalid_type" in result.details["item_type"]
 
-    def test_diff_context_versions_nonexistent_versions(self, db_session):
+    @pytest.mark.asyncio
+    async def test_diff_context_versions_nonexistent_versions(self, db_session):
         """Test diff with non-existent versions."""
-        import asyncio
-
-        from conport.main import diff_context_versions
+        from novaport_mcp.main import diff_context_versions, db_session_context
 
         # Test with both versions that don't exist
-        result = asyncio.run(diff_context_versions(
+        token = db_session_context.set(db_session)
+        result = await diff_context_versions(
             workspace_id="test",
             item_type="product_context",
             version_a=999,  # Doesn't exist
             version_b=1000,  # Also doesn't exist
-            db=db_session
-        ))
+        )
+        db_session_context.reset(token)
 
         # Expect an MCPError for the first version that is not found
-        assert hasattr(result, 'error')
+        assert hasattr(result, "error")
         assert "Version 999 not found" in result.error
 
     def test_diff_context_versions_dictdiffer_import(self):
         """Test that dictdiffer is correctly imported."""
         try:
             import dictdiffer
+
             # Test that the diff function exists
-            assert hasattr(dictdiffer, 'diff')
+            assert hasattr(dictdiffer, "diff")
 
             # Test a simple diff to check that it works
             dict1 = {"a": 1, "b": 2}
@@ -283,30 +293,28 @@ class TestDiffContextVersions:
             assert len(diff_result) > 0
 
         except ImportError:
-            pytest.fail("dictdiffer module is not available - required for diff_context_versions")
+            pytest.fail(
+                "dictdiffer module is not available - required for diff_context_versions"
+            )
 
     def test_diff_context_versions_database_model_structure(self):
         """Test that the history models have the correct structure."""
         # Test ProductContextHistory model
         product_history = models.ProductContextHistory(
-            version=1,
-            content={"test": "data"},
-            change_source="Test"
+            version=1, content={"test": "data"}, change_source="Test"
         )
 
         # Check the required attributes
-        assert hasattr(product_history, 'version')
-        assert hasattr(product_history, 'content')
-        assert hasattr(product_history, 'change_source')
+        assert hasattr(product_history, "version")
+        assert hasattr(product_history, "content")
+        assert hasattr(product_history, "change_source")
 
         # Test ActiveContextHistory model
         active_history = models.ActiveContextHistory(
-            version=1,
-            content={"test": "data"},
-            change_source="Test"
+            version=1, content={"test": "data"}, change_source="Test"
         )
 
         # Check the required attributes
-        assert hasattr(active_history, 'version')
-        assert hasattr(active_history, 'content')
-        assert hasattr(active_history, 'change_source')
+        assert hasattr(active_history, "version")
+        assert hasattr(active_history, "content")
+        assert hasattr(active_history, "change_source")

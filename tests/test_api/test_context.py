@@ -3,9 +3,9 @@ import shutil
 from pathlib import Path
 
 import pytest
-from conport.app_factory import create_app
-from conport.db import models
-from conport.db.database import get_db, run_migrations_for_workspace
+from novaport_mcp.app_factory import create_app
+from novaport_mcp.db import models
+from novaport_mcp.db.database import get_db, run_migrations_for_workspace
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -16,6 +16,7 @@ app = create_app()
 # Use a fixed test workspace.
 TEST_WORKSPACE_DIR = Path("./test_workspace_context")
 
+
 def get_test_db_url():
     """Generates the URL for the test database."""
     data_dir = TEST_WORKSPACE_DIR / ".novaport_data"
@@ -23,10 +24,9 @@ def get_test_db_url():
     db_path = data_dir.resolve() / "conport.db"
     return f"sqlite:///{db_path}"
 
+
 # Set up a test-specific database engine
-engine = create_engine(
-    get_test_db_url(), connect_args={"check_same_thread": False}
-)
+engine = create_engine(get_test_db_url(), connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 db_path = Path(get_test_db_url().replace("sqlite:///", ""))
@@ -41,7 +41,9 @@ def override_get_db():
     finally:
         db.close()
 
+
 app.dependency_overrides[get_db] = override_get_db
+
 
 @pytest.fixture(scope="module")
 def client():
@@ -67,12 +69,15 @@ def client():
             shutil.rmtree(TEST_WORKSPACE_DIR)
         except PermissionError:
             import time
+
             time.sleep(1)  # Give Windows time to release handles
             shutil.rmtree(TEST_WORKSPACE_DIR)
+
 
 def b64_encode(s: str) -> str:
     """Helper to encode paths for test URLs."""
     return base64.urlsafe_b64encode(s.encode()).decode()
+
 
 def test_update_product_context(client: TestClient):
     """Test updating product context via full overwrite and patch."""
@@ -87,8 +92,7 @@ def test_update_product_context(client: TestClient):
     # 2. Full overwrite with `content`
     new_content = {"project": "Nova", "version": 1}
     response_put = client.put(
-        f"/workspaces/{workspace_b64}/context/product",
-        json={"content": new_content}
+        f"/workspaces/{workspace_b64}/context/product", json={"content": new_content}
     )
     assert response_put.status_code == 200
     assert response_put.json()["content"] == new_content
@@ -97,7 +101,7 @@ def test_update_product_context(client: TestClient):
     patch_data = {"version": 2, "status": "alpha"}
     response_patch = client.put(
         f"/workspaces/{workspace_b64}/context/product",
-        json={"patch_content": patch_data}
+        json={"patch_content": patch_data},
     )
     assert response_patch.status_code == 200
     expected_after_patch = {"project": "Nova", "version": 2, "status": "alpha"}
@@ -107,7 +111,7 @@ def test_update_product_context(client: TestClient):
     delete_patch = {"status": "__DELETE__"}
     response_delete_patch = client.put(
         f"/workspaces/{workspace_b64}/context/product",
-        json={"patch_content": delete_patch}
+        json={"patch_content": delete_patch},
     )
     assert response_delete_patch.status_code == 200
     expected_after_delete = {"project": "Nova", "version": 2}

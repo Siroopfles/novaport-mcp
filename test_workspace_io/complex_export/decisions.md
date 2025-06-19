@@ -2,7 +2,7 @@
 
 ## Decision with special chars: äöü & <tags>
 
-**Timestamp:** 2025-06-18 17:57:44.653908
+**Timestamp:** 2025-06-18 22:45:43.484998
 
 **Rationale:**
 Multi-line

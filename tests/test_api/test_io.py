@@ -13,10 +13,10 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from conport.app_factory import create_app
-from conport.db import models
-from conport.db.database import get_db, run_migrations_for_workspace
-from conport.services import vector_service
+from novaport_mcp.app_factory import create_app
+from novaport_mcp.db import models
+from novaport_mcp.db.database import get_db, run_migrations_for_workspace
+from novaport_mcp.services import vector_service
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -29,6 +29,7 @@ app = create_app()
 # Use a fixed test workspace for I/O tests
 TEST_WORKSPACE_DIR = Path("./test_workspace_io")
 
+
 def get_test_db_url():
     """Generates the URL for the test database."""
     data_dir = TEST_WORKSPACE_DIR / ".novaport_data"
@@ -36,15 +37,15 @@ def get_test_db_url():
     db_path = data_dir.resolve() / "conport.db"
     return f"sqlite:///{db_path}"
 
+
 # Setup a test-specific database engine
-engine = create_engine(
-    get_test_db_url(), connect_args={"check_same_thread": False}
-)
+engine = create_engine(get_test_db_url(), connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Run the real Alembic migrations on the test database
 db_path = Path(get_test_db_url().replace("sqlite:///", ""))
 run_migrations_for_workspace(engine, db_path)
+
 
 def override_get_db():
     """Override the 'get_db' dependency for the tests."""
@@ -54,7 +55,9 @@ def override_get_db():
     finally:
         db.close()
 
+
 app.dependency_overrides[get_db] = override_get_db
+
 
 @pytest.fixture(scope="module")
 def client():
@@ -73,6 +76,7 @@ def client():
     # Use robust rmtree for cleanup
     robust_rmtree(TEST_WORKSPACE_DIR)
 
+
 @pytest.fixture
 def db_session():
     """Create a database session for direct database operations."""
@@ -82,9 +86,11 @@ def db_session():
     finally:
         db.close()
 
+
 def b64_encode(s: str) -> str:
     """Helper to encode paths for test URLs."""
     return base64.urlsafe_b64encode(s.encode()).decode()
+
 
 def create_test_decisions(db_session, count: int = 3):
     """Helper function to create test decisions for export/import testing."""
@@ -94,7 +100,7 @@ def create_test_decisions(db_session, count: int = 3):
             summary=f"Test Decision {i+1}",
             rationale=f"Test rationale for decision {i+1}",
             implementation_details=f"Implementation details for decision {i+1}",
-            tags=["test", f"decision{i+1}"]
+            tags=["test", f"decision{i+1}"],
         )
         decisions.append(decision)
 
@@ -127,7 +133,7 @@ class TestIOExportFunctionality:
         # Test the export endpoint
         response = client.post(
             f"/workspaces/{workspace_b64}/io/export",
-            params={"export_dir": "test_export"}
+            params={"export_dir": "test_export"},
         )
 
         assert response.status_code == 200
@@ -155,7 +161,7 @@ class TestIOExportFunctionality:
 
         response = client.post(
             f"/workspaces/{workspace_b64}/io/export",
-            params={"export_dir": "empty_export"}
+            params={"export_dir": "empty_export"},
         )
 
         assert response.status_code == 200
@@ -175,14 +181,14 @@ class TestIOExportFunctionality:
             summary="Decision with special chars: äöü & <tags>",
             rationale="Multi-line\nrationale with\n**markdown** formatting",
             implementation_details="Details with\n- bullet points\n- and more",
-            tags=["special-chars", "markdown", "unicode"]
+            tags=["special-chars", "markdown", "unicode"],
         )
         db_session.add(complex_decision)
         db_session.commit()
 
         response = client.post(
             f"/workspaces/{workspace_b64}/io/export",
-            params={"export_dir": "complex_export"}
+            params={"export_dir": "complex_export"},
         )
 
         assert response.status_code == 200
@@ -200,7 +206,7 @@ class TestIOExportFunctionality:
 
     def test_export_service_function_directly(self, db_session):
         """Test the export service function directly."""
-        from conport.services import io_service
+        from novaport_mcp.services import io_service
 
         # Create test data
         create_test_decisions(db_session, 1)
@@ -274,7 +280,7 @@ PostgreSQL offers ACID compliance and excellent performance.
             # Test the import endpoint
             response = client.post(
                 f"/workspaces/{workspace_b64}/io/import",
-                params={"import_dir": "import_test"}
+                params={"import_dir": "import_test"},
             )
 
             assert response.status_code == 200
@@ -299,7 +305,7 @@ PostgreSQL offers ACID compliance and excellent performance.
 
         response = client.post(
             f"/workspaces/{workspace_b64}/io/import",
-            params={"import_dir": "nonexistent_dir"}
+            params={"import_dir": "nonexistent_dir"},
         )
 
         # The service returns success with error message, not HTTP 500
@@ -344,7 +350,7 @@ Invalid block without proper structure
 
             response = client.post(
                 f"/workspaces/{workspace_b64}/io/import",
-                params={"import_dir": "malformed_import"}
+                params={"import_dir": "malformed_import"},
             )
 
             assert response.status_code == 200
@@ -352,11 +358,11 @@ Invalid block without proper structure
 
             assert import_result["status"] == "completed"
             assert import_result["imported"] == 2  # 2 valid decisions found
-            assert import_result["failed"] == 0   # No actual parsing failures
+            assert import_result["failed"] == 0  # No actual parsing failures
 
     def test_import_service_function_directly(self, db_session):
         """Test the import service function directly."""
-        from conport.services import io_service
+        from novaport_mcp.services import io_service
 
         # Create temporary import directory with valid content
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -396,9 +402,7 @@ class TestIOErrorHandling:
         """Test export with invalid workspace encoding."""
         invalid_workspace_b64 = "invalid_base64_encoding"
 
-        response = client.post(
-            f"/workspaces/{invalid_workspace_b64}/io/export"
-        )
+        response = client.post(f"/workspaces/{invalid_workspace_b64}/io/export")
 
         assert response.status_code == 500
         assert "Export failed" in response.json()["detail"]
@@ -407,9 +411,7 @@ class TestIOErrorHandling:
         """Test import with invalid workspace encoding."""
         invalid_workspace_b64 = "invalid_base64_encoding"
 
-        response = client.post(
-            f"/workspaces/{invalid_workspace_b64}/io/import"
-        )
+        response = client.post(f"/workspaces/{invalid_workspace_b64}/io/import")
 
         assert response.status_code == 500
         assert "Import failed" in response.json()["detail"]
@@ -423,8 +425,7 @@ class TestIOErrorHandling:
 
         custom_dir = "my_custom_export_folder"
         response = client.post(
-            f"/workspaces/{workspace_b64}/io/export",
-            params={"export_dir": custom_dir}
+            f"/workspaces/{workspace_b64}/io/export", params={"export_dir": custom_dir}
         )
 
         assert response.status_code == 200
@@ -452,7 +453,7 @@ class TestIOErrorHandling:
 
             response = client.post(
                 f"/workspaces/{workspace_b64}/io/import",
-                params={"import_dir": "empty_import"}
+                params={"import_dir": "empty_import"},
             )
 
             assert response.status_code == 200

@@ -35,20 +35,20 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-root --no-dev && rm -rf $POETRY_CACHE_DIR
 
 # Create non-root user
-RUN groupadd -r conport && useradd -r -g conport conport
+RUN groupadd -r novaport-mcp && useradd -r -g novaport-mcp novaport-mcp
 
 # Copy source code
-COPY src/ ./src/
+COPY src/novaport_mcp/ ./src/novaport_mcp/
 COPY alembic.ini ./
 
 # Install the project itself
 RUN poetry install --no-dev
 
-# Change ownership of the app directory to the conport user
-RUN chown -R conport:conport /app
+# Change ownership of the app directory to the novaport-mcp user
+RUN chown -R novaport-mcp:novaport-mcp /app
 
 # Switch to non-root user
-USER conport
+USER novaport-mcp
 
 # Set environment variables for the application
 ENV CONPORT_LOG_LEVEL=INFO \
@@ -63,7 +63,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
 
 # Set the entrypoint and default command
-ENTRYPOINT ["python", "-m", "conport"]
+ENTRYPOINT ["python", "-m", "novaport_mcp"]
 CMD ["start"]
 
 # Labels for metadata

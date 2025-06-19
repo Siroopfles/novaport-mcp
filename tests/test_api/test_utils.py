@@ -1,4 +1,5 @@
 """Common test utilities."""
+
 import shutil
 import time
 import warnings
@@ -25,7 +26,7 @@ def robust_rmtree(path: str | Path, max_retries: int = 3, base_delay: float = 1.
             break
         except PermissionError:
             if attempt < max_retries - 1:
-                retry_delay = base_delay * (2 ** attempt)  # Exponential backoff
+                retry_delay = base_delay * (2**attempt)  # Exponential backoff
                 time.sleep(retry_delay)
             else:
                 warnings.warn(
