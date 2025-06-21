@@ -51,9 +51,9 @@ RUN chown -R novaport-mcp:novaport-mcp /app
 USER novaport-mcp
 
 # Set environment variables for the application
-ENV CONPORT_LOG_LEVEL=INFO \
-    CONPORT_HOST=0.0.0.0 \
-    CONPORT_PORT=8000
+ENV NOVAPORT_MCP_LOG_LEVEL=INFO \
+    NOVAPORT_MCP_HOST=0.0.0.0 \
+    NOVAPORT_MCP_PORT=8000
 
 # Expose the default port
 EXPOSE 8000

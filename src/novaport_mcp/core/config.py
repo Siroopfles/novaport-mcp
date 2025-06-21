@@ -66,4 +66,4 @@ def decode_workspace_id(encoded_id: str) -> str:
 settings = Settings()
 
 # ChromaDB configuration
-CHROMA_DEFAULT_COLLECTION_NAME = "conport_default"
+CHROMA_DEFAULT_COLLECTION_NAME = "novaport_default"

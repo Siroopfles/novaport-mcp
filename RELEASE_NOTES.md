@@ -60,7 +60,7 @@ This is the inaugural release of **NovaPort-MCP**, a complete, from-the-ground-u
 - **Poetry Integration**: Modern dependency management with reproducible builds
 - **Virtual Environment**: Automatic virtual environment management
 - **Development Dependencies**: Comprehensive dev tooling included (pytest, black, ruff, mypy)
-- **CLI Interface**: Simple `poetry run conport` command for server startup
+- **CLI Interface**: Simple `poetry run novaport-mcp` command for server startup
 
 #### Testing Infrastructure
 - **Pytest Framework**: Comprehensive test suite with async support
@@ -115,7 +115,7 @@ poetry install
 cp .env.example .env
 
 # Run the server
-poetry run conport
+poetry run novaport-mcp
 ```
 
 #### VS Code Integration (NovaPort)
@@ -125,7 +125,7 @@ Add to your workspace `.vscode/settings.json`:
   "mcpServers": {
     "novaport-mcp": {
       "command": "poetry",
-      "args": ["run", "conport"],
+      "args": ["run", "novaport-mcp"],
       "cwd": "/path/to/your/cloned/novaport-mcp",
       "disabled": false,
       "description": "The robust, multi-project MCP server for NovaPort."

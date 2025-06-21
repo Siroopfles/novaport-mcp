@@ -24,7 +24,7 @@ def run_migrations_for_workspace(engine, db_path: Path):
     """This function is blocking and will be executed in a thread."""
     log.info(f"Running Alembic migrations for database: {db_path}...")
 
-    package_root = importlib.resources.files("conport")
+    package_root = importlib.resources.files("novaport_mcp")
     script_location = str(package_root / "db" / "alembic")
 
     alembic_cfg = Config()

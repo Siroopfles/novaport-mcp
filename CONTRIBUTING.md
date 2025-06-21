@@ -42,7 +42,7 @@ NovaPort-MCP is a robust, database-backed Model Context Protocol server for mana
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/siroopfles/novaport-mcp.git
-   cd novaport-mcp/context-portal-v2
+   cd novaport-mcp
    ```
 
 2. **Install Poetry** (if not already installed):
@@ -68,7 +68,7 @@ NovaPort-MCP is a robust, database-backed Model Context Protocol server for mana
 
 6. **Verify installation**:
    ```bash
-   poetry run conport --help
+   poetry run novaport-mcp --help
    ```
 
 ### Development Tools
